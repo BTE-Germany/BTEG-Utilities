@@ -45,8 +45,14 @@ public class RestartTimer implements CommandExecutor  {
                 }
                 else if(args.length == 1 || args.length == 2){
 
-
-                        if(args[0].matches("restart")) {
+                        if(args[0].matches("cancel") || args[0].matches("stop")){
+                            runnable.cancel();
+                            for (Player p : Bukkit.getOnlinePlayers()) {
+                                p.sendMessage("§b§lBTEG §7» §4Restart of " + Bukkit.getServerName() + " canceled!");
+                                p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
+                            }
+                            return true;
+                        }else if(args[0].matches("restart")) {
                             if(args.length == 2){
                                 timeleft = Integer.parseInt(args[1]);
                             }
