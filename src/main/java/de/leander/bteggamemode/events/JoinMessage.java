@@ -20,5 +20,8 @@ public class JoinMessage implements Listener {
     public static void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         event.setQuitMessage("§b§lBTEG §7» " + player.getDisplayName()+ " switched to another server");
-    }
+        player.setWalkSpeed(0.2F);
+        player.setFlySpeed(0.1F);
+        }
+
 }
