@@ -22,6 +22,7 @@ public class RestartTimer implements CommandExecutor  {
 
     public static int timeleft = 120;
     private static Plugin plugin;
+    BukkitRunnable runnable;
 
 
     public RestartTimer(JavaPlugin pPlugin) {
@@ -40,18 +41,16 @@ public class RestartTimer implements CommandExecutor  {
                 if(args.length == 0) {
                     player.sendMessage("§b§lBTEG §7» §7Example commands:");
                     player.sendMessage("§b§lBTEG §7» §7/bteg restart <Seconds[5min=300]> - Restarts a server - Standard: §82 minutes");
+                    player.sendMessage("§b§lBTEG §7» §7/terraform <Height>");
                 }
                 else if(args.length == 1 || args.length == 2){
 
 
                         if(args[0].matches("restart")) {
                             if(args.length == 2){
-
-
-                                        timeleft = Integer.parseInt(args[1]);
-
+                                timeleft = Integer.parseInt(args[1]);
                             }
-                            BukkitRunnable runnable = new BukkitRunnable() {
+                            runnable = new BukkitRunnable() {
                                 @Override
                                 public void run() {
                                     for (Player p : Bukkit.getOnlinePlayers()) {
@@ -69,20 +68,12 @@ public class RestartTimer implements CommandExecutor  {
                                     }
                                     timeleft--;
                                     if(timeleft == 0){
-                                        Bukkit.getServer().shutdown();
+                                        Bukkit.getServer().spigot().restart();
                                     }
                                 }
                             };
+                            player.sendMessage("§b§lBTEG §7» §7Planned restart in §4"+shortInteger(timeleft) +"§7 hours.");
                             runnable.runTaskTimer(plugin, 40,20);
-
-                            if(args[1].matches("stop") || args[1].matches("cancel")) {
-                                runnable.cancel(); //Das funktioniert noch nicht
-                                for (Player p : Bukkit.getOnlinePlayers()) {
-                                    p.sendMessage("§b§lBTEG §7» §4aRestart of " + Bukkit.getServerName() + " canceled!");
-                                    p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
-                                }
-                                return false;
-                            }
 
                         }
                         else if(args[0].matches("warp")) {
@@ -104,7 +95,7 @@ public class RestartTimer implements CommandExecutor  {
 
 
 
-        return false;
+        return true;
 }
 
     void sendMessage(int pZeit){

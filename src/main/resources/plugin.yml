@@ -9,3 +9,9 @@ commands:
   bteg:
     description: Restarts the server within 2 minutes
     usage: /bteg restart
+  terraform:
+    description: Terraforms an area for you
+    usage: /terraform <Height>
+  speed:
+    description: Gives you speed
+    usage: /speed <Number>
