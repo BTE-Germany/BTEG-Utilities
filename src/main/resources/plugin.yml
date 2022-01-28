@@ -15,3 +15,6 @@ commands:
   speed:
     description: Gives you speed
     usage: /speed <Number>
+  /side:
+    description: Replaces blocks sideways
+    usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]>

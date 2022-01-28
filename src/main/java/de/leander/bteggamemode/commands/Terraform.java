@@ -219,8 +219,6 @@ public class Terraform implements CommandExecutor {
         clipboard = new CuboidClipboard(max.subtract(min).add(new Vector(1, 1, 1)), min);
         clipboard.copy(editSession);
         editSession.flushQueue();
-
-
     }
 
     private void load(Player player) {

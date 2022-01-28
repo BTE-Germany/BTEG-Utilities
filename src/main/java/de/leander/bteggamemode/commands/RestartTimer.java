@@ -42,6 +42,7 @@ public class RestartTimer implements CommandExecutor  {
                     player.sendMessage("§b§lBTEG §7» §7Example commands:");
                     player.sendMessage("§b§lBTEG §7» §7/bteg restart <Seconds[5min=300]> - Restarts a server - Standard: §82 minutes");
                     player.sendMessage("§b§lBTEG §7» §7/terraform <Height>");
+                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]>");
                 }
                 else if(args.length == 1 || args.length == 2){
 
