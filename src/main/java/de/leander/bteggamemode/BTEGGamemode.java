@@ -18,6 +18,7 @@ public final class BTEGGamemode extends JavaPlugin {
         getCommand("terraform").setExecutor(new Terraform(this));
         getCommand("/side").setExecutor(new Side(this));
         getCommand("speed").setExecutor(new Speed(this));
+        getCommand("cleanup").setExecutor(new CleanUpCommand());
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         getServer().getConsoleSender().sendMessage(ChatColor.BLUE + "[BTEG Gamemode]: Plugin enabled!");
     }

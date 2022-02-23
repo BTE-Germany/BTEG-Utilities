@@ -18,3 +18,8 @@ commands:
   /side:
     description: Replaces blocks sideways
     usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]>
+  cleanup:
+    description: Executes big worldedit command
+    usage: /cleanup
+    aliases:
+      - /cleanup
