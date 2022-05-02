@@ -6,7 +6,7 @@
 
     <groupId>de.leander</groupId>
     <artifactId>bteg-utilities</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>BTEG Utilities</name>
@@ -94,10 +94,6 @@
             <url>https://repo.cloudnetservice.eu/repository/releases/</url>
         </repository>
         <repository>
-            <id>headdatabase-api</id>
-            <url>https://mvn.intellectualsites.com/content/repositories/thirdparty/</url>
-        </repository>
-        <repository>
             <id>nachwahl-repo</id>
             <url>https://maven.nachwahl.dev/</url>
         </repository>
@@ -115,11 +111,6 @@
             <artifactId>cloudnet-driver</artifactId>
             <version>3.4.0-RELEASE</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>me.arcaniax</groupId>
-            <artifactId>HeadDatabase-API</artifactId>
-            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.sk89q.worldedit</groupId>

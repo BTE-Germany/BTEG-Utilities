@@ -14,6 +14,7 @@ import com.sk89q.worldedit.function.mask.BlockMask;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.schematic.SchematicFormat;
@@ -39,11 +40,13 @@ import java.util.List;
 
 public class Terraform implements CommandExecutor {
 
+    private static int[] preHeight = new int[2];
     private static int height;
     static World world1;
     private static Plugin plugin;
     private static boolean runterterraformen;
     private static Polygonal2DRegion polyRegion;
+    private static CuboidRegion cuboidRegion;
     static CuboidClipboard clipboard;
     static ClipboardHolder clipboardHolder;
 
@@ -85,7 +88,7 @@ public class Terraform implements CommandExecutor {
             plotRegion = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException ex) {
             ex.printStackTrace();
-            player.sendMessage("§7§l>> §cPlease select a WorldEdit selection!");
+            player.sendMessage("§b§lBTEG §7» §cPlease select a WorldEdit selection!");
             return;
         }
         try {
@@ -94,19 +97,23 @@ public class Terraform implements CommandExecutor {
                 // Cast WorldEdit region to polygonal region
                 polyRegion = (Polygonal2DRegion) plotRegion;
                 if (polyRegion.getLength() > 100 || polyRegion.getWidth() > 100 || polyRegion.getHeight() > 30) {
-                    player.sendMessage("§7§l>> §cPlease adjust your selection size!");
+                    player.sendMessage("§b§lBTEG §7» §cPlease adjust your selection size!");
                     return;
                 }
                 // Set minimum selection height under player location
+                preHeight[0] = polyRegion.getMinimumY();
+                preHeight[1] = polyRegion.getMaximumY();
+
                 polyRegion.setMinimumY(height);
                 polyRegion.setMaximumY(height + 35);
 
             } else {
-                player.sendMessage("§7§l>> §cPlease use poly selection to terraform!");
+                player.sendMessage("§b§lBTEG §7» §cPlease use poly selection to terraform!");
                 return;
             }
+
         } catch (Exception ex) {
-            player.sendMessage("§7§l>> §cAn error occurred while selection area!");
+            player.sendMessage("§b§lBTEG §7» §cAn error occurred while select this area!");
             return;
         }
 
@@ -144,8 +151,14 @@ public class Terraform implements CommandExecutor {
 
                             if (runterterraformen) {
                                 for (int z = j; z >= height; z--) {
-                                    if (block.getLocation().getBlockY() == height + 1) {
-                                        world1.getBlockAt(i, height, k).setType(Material.EMERALD_BLOCK);
+
+                                    if (block.getLocation().getBlockY() == height+1) {
+                                        if(block.getType().equals(Material.LAPIS_BLOCK) || block.getType().equals(Material.CONCRETE) || block.getType().equals(Material.BRICK)){
+
+                                        }else{
+                                            world1.getBlockAt(i, height, k).setType(Material.EMERALD_BLOCK);
+                                        }
+
                                     }
                                     if (block.getType().equals(Material.LAPIS_BLOCK)) {
                                         world1.getBlockAt(i, z, k).setType(Material.LAPIS_BLOCK);
@@ -163,6 +176,7 @@ public class Terraform implements CommandExecutor {
                                         world1.getBlockAt(i, z, k).setType(Material.AIR);
                                     }
                                 }
+
                             }
 
                             if (!runterterraformen) {
@@ -191,11 +205,14 @@ public class Terraform implements CommandExecutor {
                                         }
                                     }
                                 }
+
                             }
                         }
                     }
                 }
             }
+            polyRegion.setMinimumY(preHeight[0]);
+            polyRegion.setMaximumY(preHeight[1]);
             player.sendMessage("§b§lBTEG §7» §7Area succesfully terraformed to height §l"+(height+1)+"! Type </terraform undo> for undo.");
         }
     }

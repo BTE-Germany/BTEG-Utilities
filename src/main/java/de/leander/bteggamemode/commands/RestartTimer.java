@@ -79,7 +79,7 @@ public class RestartTimer implements CommandExecutor  {
                                     }
                                 }
                             };
-                            player.sendMessage("§b§lBTEG §7» §7Planned restart in §4"+shortInteger(timeleft) +"§7 hours.");
+                            player.sendMessage("§b§lBTEG §7» §cPlanned restart in §4"+shortInteger(timeleft) +"§7.");
                             runnable.runTaskTimer(plugin, 40,20);
 
                         }
@@ -105,8 +105,13 @@ public class RestartTimer implements CommandExecutor  {
         return true;
 }
 
-    void sendMessage(int pZeit){
-        if (pZeit == 60){
+    public static void sendMessage(int pZeit){
+        if (pZeit == 300){
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage("§b§lBTEG §7» §c" + Bukkit.getServerName() + " restarts in §l5 minutes!");
+            }
+        }
+        else if (pZeit == 60){
             for (Player p : Bukkit.getOnlinePlayers()) {
                 p.sendMessage("§b§lBTEG §7» §c" + Bukkit.getServerName() + " restarts in §l1 minute!");
             }
@@ -126,7 +131,7 @@ public class RestartTimer implements CommandExecutor  {
         }
     }
 
-    public String shortInteger(int duration) {
+    public static String shortInteger(int duration) {
         String string = "";
         int hours = 0;
         int minutes = 0;

@@ -2,6 +2,7 @@ package de.leander.bteggamemode;
 
 import de.leander.bteggamemode.commands.*;
 import de.leander.bteggamemode.events.BedrockTerraBlock;
+import de.leander.bteggamemode.events.DailyRestart;
 import de.leander.bteggamemode.events.JoinMessage;
 import de.leander.bteggamemode.events.SetGamemode;
 import org.bukkit.ChatColor;
@@ -20,6 +21,7 @@ public final class BTEGGamemode extends JavaPlugin {
         getCommand("speed").setExecutor(new Speed(this));
         getCommand("cleanup").setExecutor(new CleanUpCommand());
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        new DailyRestart(this);
         getServer().getConsoleSender().sendMessage(ChatColor.BLUE + "[BTEG Gamemode]: Plugin enabled!");
     }
 
@@ -27,4 +29,6 @@ public final class BTEGGamemode extends JavaPlugin {
     public void onDisable() {
         getServer().getConsoleSender().sendMessage(ChatColor.RED + "[BTEG Gamemode]: Plugin disabled!");
     }
+
+
 }
