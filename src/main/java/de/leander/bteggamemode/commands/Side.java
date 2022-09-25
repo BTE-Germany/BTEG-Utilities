@@ -31,6 +31,7 @@ public class Side implements CommandExecutor {
     static String[] preBlock;
     static String[] postBlock;
     static String direction;
+    static String mask;
     static byte blockData;
 
     static Clipboard backup;
@@ -48,7 +49,7 @@ public class Side implements CommandExecutor {
             if (player.hasPermission("bteg.side")) {
                 if(args.length == 0) {
                     player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]>");
+                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <Mask[0,1,...]>");
                     player.sendMessage("§b§lBTEG §7» §7//side undo>");
                     return true;
                 }
@@ -58,12 +59,12 @@ public class Side implements CommandExecutor {
                         return true;
                     }else{
                         player.sendMessage("§b§lBTEG §7» §7Usage:");
-                        player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]>");
+                        player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <Mask[0,1,...]>");
                         player.sendMessage("§b§lBTEG §7» §7//side undo>");
                         return true;
                     }
                 }
-                else if(args.length == 3){
+                else if(args.length >= 3){
 
 
                     if(args[0].contains(":")){
@@ -84,6 +85,9 @@ public class Side implements CommandExecutor {
 
 
                     direction = args[2];
+                    if(args.length == 4) {
+                        mask = args[3];
+                    }
                     try {
                         setSelection(player);
                     } catch (MaxChangedBlocksException | EmptyClipboardException e) {
@@ -95,7 +99,7 @@ public class Side implements CommandExecutor {
                 }
                 else{
                     player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]>");
+                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <Mask[0,1,...]>");
                     player.sendMessage("§b§lBTEG §7» §7//side undo>");
                     return true;
                 }
@@ -115,11 +119,10 @@ public class Side implements CommandExecutor {
             return;
         }
         try {
-            // Check if WorldEdit selection is polygonal
             if (plotRegion instanceof Polygonal2DRegion) {
                 // Cast WorldEdit region to polygonal region
                 polyRegion = (Polygonal2DRegion) plotRegion;
-                if (polyRegion.getLength() > 200 || polyRegion.getWidth() > 200 || polyRegion.getHeight() > 100) {
+                if (polyRegion.getLength() > 500 || polyRegion.getWidth() > 500 || polyRegion.getHeight() > 200) {
                     player.sendMessage("§7§l>> §cPlease adjust your selection size!");
                     return;
                 }
@@ -130,12 +133,12 @@ public class Side implements CommandExecutor {
                 return;
             }
         } catch (Exception ex) {
-            player.sendMessage("§7§l>> §cAn error occurred while selection area!");
+            player.sendMessage("§7§l>> §cAn error occurred while select area!");
             return;
         }
 
-        replace(polyRegion, player);
 
+        replace(polyRegion, player);
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 
     }
@@ -154,36 +157,70 @@ public class Side implements CommandExecutor {
                         if (region.contains(new Vector(i, j, k))) {
                             Block block = world1.getBlockAt(i, j, k);
                             if (block.getTypeId() == Integer.parseInt(preBlock[0]) && block.getData() == (byte) Integer.parseInt(preBlock[1])) {
-                                switch (direction){
-                                    case "n":{
-                                        if(world1.getBlockAt(i, j, k-1).getTypeId() != Integer.parseInt(preBlock[0])){
-                                            world1.getBlockAt(i, j, k-1).setTypeId(Integer.parseInt(postBlock[0]));
-                                            world1.getBlockAt(i, j, k-1).setData((byte) Integer.parseInt(postBlock[1]));
+                                if(mask==null) {
+                                    switch (direction) {
+                                        case "n": {
+                                            if (world1.getBlockAt(i, j, k - 1).getTypeId() != Integer.parseInt(preBlock[0])) {
+                                                world1.getBlockAt(i, j, k - 1).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i, j, k - 1).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
                                         }
-                                        break;
-                                    }
-                                    case "e":{
-                                        if(world1.getBlockAt(i+1, j, k).getTypeId() != Integer.parseInt(preBlock[0])) {
-                                            world1.getBlockAt(i + 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
-                                            world1.getBlockAt(i + 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                        case "e": {
+                                            if (world1.getBlockAt(i + 1, j, k).getTypeId() != Integer.parseInt(preBlock[0])) {
+                                                world1.getBlockAt(i + 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i + 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
                                         }
-                                        break;
-                                    }
-                                    case "s": {
-                                        if (world1.getBlockAt(i, j, k + 1).getTypeId() != Integer.parseInt(preBlock[0])) {
-                                            world1.getBlockAt(i, j, k + 1).setTypeId(Integer.parseInt(postBlock[0]));
-                                            world1.getBlockAt(i, j, k + 1).setData((byte) Integer.parseInt(postBlock[1]));
-                                    }
-                                        break;
-                                    }
-                                    case "w": {
-                                        if (world1.getBlockAt(i -1, j, k).getTypeId() != Integer.parseInt(preBlock[0])) {
-                                            world1.getBlockAt(i - 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
-                                            world1.getBlockAt(i - 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
-                                    }
-                                        break;
-                                    }
+                                        case "s": {
+                                            if (world1.getBlockAt(i, j, k + 1).getTypeId() != Integer.parseInt(preBlock[0])) {
+                                                world1.getBlockAt(i, j, k + 1).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i, j, k + 1).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
+                                        }
+                                        case "w": {
+                                            if (world1.getBlockAt(i - 1, j, k).getTypeId() != Integer.parseInt(preBlock[0])) {
+                                                world1.getBlockAt(i - 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i - 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
+                                        }
 
+                                    }
+                                }else{
+                                    switch (direction) {
+                                        case "n": {
+                                            if (world1.getBlockAt(i, j, k - 1).getTypeId() != Integer.parseInt(preBlock[0]) && world1.getBlockAt(i, j, k - 1).getTypeId() == Integer.parseInt(mask)) {
+                                                world1.getBlockAt(i, j, k - 1).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i, j, k - 1).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
+                                        }
+                                        case "e": {
+                                            if (world1.getBlockAt(i + 1, j, k).getTypeId() != Integer.parseInt(preBlock[0]) && world1.getBlockAt(i + 1, j, k).getTypeId() == Integer.parseInt(mask)) {
+                                                world1.getBlockAt(i + 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i + 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
+                                        }
+                                        case "s": {
+                                            if (world1.getBlockAt(i, j, k + 1).getTypeId() != Integer.parseInt(preBlock[0]) && world1.getBlockAt(i, j, k + 1).getTypeId() == Integer.parseInt(mask)) {
+                                                world1.getBlockAt(i, j, k + 1).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i, j, k + 1).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
+                                        }
+                                        case "w": {
+                                            if (world1.getBlockAt(i - 1, j, k).getTypeId() != Integer.parseInt(preBlock[0]) && world1.getBlockAt(i - 1, j, k).getTypeId() == Integer.parseInt(mask)) {
+                                                world1.getBlockAt(i - 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
+                                                world1.getBlockAt(i - 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                            }
+                                            break;
+                                        }
+
+                                    }
                                 }
 
                             }
@@ -218,6 +255,8 @@ public class Side implements CommandExecutor {
         editSession.enableQueue();
         clipboard = new CuboidClipboard(max.subtract(min).add(new Vector(1, 1, 1)), min);
         clipboard.copy(editSession);
+
+        localSession.remember(editSession);
         editSession.flushQueue();
     }
 

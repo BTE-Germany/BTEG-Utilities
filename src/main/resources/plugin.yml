@@ -6,20 +6,31 @@ description: This plugin sets users gamemode to spectator or visitor (checks for
 website: bte-germany.de
 
 commands:
-  bteg:
-    description: Restarts the server within 2 minutes
-    usage: /bteg restart
+  lidar:
+    description: Saves blocks - regenerates region - replaces surfaces blocks with saved blocks
+    usage: /lidar
+    aliases:
+      - /lidar
   terraform:
     description: Terraforms an area for you
     usage: /terraform <Height>
+    aliases:
+      - /terraform
   speed:
     description: Gives you speed
     usage: /speed <Number>
   /side:
     description: Replaces blocks sideways
     usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]>
+    aliases:
+      - side
   cleanup:
     description: Executes big worldedit command
     usage: /cleanup
     aliases:
       - /cleanup
+  cover:
+    description: Covers windows with blocks
+    usage: /cover
+    aliases:
+        - /cover

@@ -2,7 +2,6 @@ package de.leander.bteggamemode;
 
 import de.leander.bteggamemode.commands.*;
 import de.leander.bteggamemode.events.BedrockTerraBlock;
-import de.leander.bteggamemode.events.DailyRestart;
 import de.leander.bteggamemode.events.JoinMessage;
 import de.leander.bteggamemode.events.SetGamemode;
 import org.bukkit.ChatColor;
@@ -15,13 +14,13 @@ public final class BTEGGamemode extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SetGamemode(), this);
         getServer().getPluginManager().registerEvents(new JoinMessage(), this);
         getServer().getPluginManager().registerEvents(new BedrockTerraBlock(), this);
-        getCommand("bteg").setExecutor(new RestartTimer(this));
         getCommand("terraform").setExecutor(new Terraform(this));
+        getCommand("cover").setExecutor(new CoverCommand());
+        getCommand("lidar").setExecutor(new LidarCommand());
         getCommand("/side").setExecutor(new Side(this));
         getCommand("speed").setExecutor(new Speed(this));
         getCommand("cleanup").setExecutor(new CleanUpCommand());
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        new DailyRestart(this);
         getServer().getConsoleSender().sendMessage(ChatColor.BLUE + "[BTEG Gamemode]: Plugin enabled!");
     }
 

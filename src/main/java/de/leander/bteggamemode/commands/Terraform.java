@@ -96,7 +96,7 @@ public class Terraform implements CommandExecutor {
             if (plotRegion instanceof Polygonal2DRegion) {
                 // Cast WorldEdit region to polygonal region
                 polyRegion = (Polygonal2DRegion) plotRegion;
-                if (polyRegion.getLength() > 100 || polyRegion.getWidth() > 100 || polyRegion.getHeight() > 30) {
+                if (polyRegion.getLength() > 300 || polyRegion.getWidth() > 300 || polyRegion.getHeight() > 60) {
                     player.sendMessage("§b§lBTEG §7» §cPlease adjust your selection size!");
                     return;
                 }
