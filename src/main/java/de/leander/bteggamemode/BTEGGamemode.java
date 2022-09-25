@@ -34,10 +34,8 @@ public final class BTEGGamemode extends JavaPlugin {
 
 
         //Schematic API
-        String webappDirLocation = "./conf";
         Tomcat tomcat = new Tomcat();
         String webPort = config.getString("webport");
-        StandardContext ctx = (StandardContext) tomcat.addWebapp("/", new File(webappDirLocation).getAbsolutePath());
         if(webPort == null || webPort.isEmpty()) {
             try {
                 throw(new Exception("No port for Schematic API defined"));
