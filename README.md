@@ -4,10 +4,12 @@ Developed for BTE Germany
 #  Features
 
 ### Commands 
-- /terraform [Height]
-- //side [Block-ID] [Block-ID] [Direction(n,o,s,w)]
+- /cover -> Covers all gray and light gray glass with cyan terracotta and gray wool
+- /lidar [save] -> Regens a region and pastes the surface block before the regen
+- /terraform [Height] -> Terraforms a region
+- //side [Block-ID] [Block-ID] [Direction(n,o,s,w)] -> Replaces blocks like worldedit with < but sideways
 - /speed [1-5]
-- /bteg restart [seconds] -> Restarts server with countdown
+- /bteg server 1,2,5 restart [seconds,empty] -> Restarts server with countdown (needs bungeecord expansion)
 
 ### Misc
 
@@ -18,6 +20,12 @@ Developed for BTE Germany
 # Permission nodes
 
 - **bteg.builder** -> There is only this one permission node for every builder/trial. All others will be set to spectator.
+- **bteg.cover**
+- **bteg.restart**
+- **bteg.lidar**
+- **bteg.terraform**
+- **bteg.side**
+- **bteg.speed**
 
 # Examples on join
 
