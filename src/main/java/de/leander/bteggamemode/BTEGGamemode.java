@@ -32,8 +32,9 @@ public final class BTEGGamemode extends JavaPlugin {
         this.saveDefaultConfig();
         FileConfiguration config = this.getConfig();
 
+
         //Schematic API
-        String webappDirLocation = "src/main/java/de/leander/bteggamemode/util/conf/";
+        String webappDirLocation = "./conf";
         Tomcat tomcat = new Tomcat();
         String webPort = config.getString("webport");
         StandardContext ctx = (StandardContext) tomcat.addWebapp("/", new File(webappDirLocation).getAbsolutePath());

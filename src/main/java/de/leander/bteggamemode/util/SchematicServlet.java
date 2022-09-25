@@ -14,6 +14,11 @@ import javax.servlet.http.HttpServletResponse;
 public class SchematicServlet extends HttpServlet {
 
     @Override
+    public void init(){
+        System.out.println("Servlet initialized");
+    }
+
+    @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         String url = request.getParameter("url");
         String name = request.getParameter("name");
