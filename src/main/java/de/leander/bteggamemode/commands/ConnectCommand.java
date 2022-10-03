@@ -64,10 +64,13 @@ public class ConnectCommand implements CommandExecutor {
                         world1 = player.getWorld();
                         return true;
                     }
+                }else{
+                    player.sendMessage("§b§lBTEG §7» §cWrong usage");
+                    player.sendMessage("§b§lBTEG §7» §7/connect <Block-ID>");
+                    return true;
                 }
             }else{
-                player.sendMessage("§b§lBTEG §7» §cWrong usage");
-                player.sendMessage("§b§lBTEG §7» §7/connect <Block-ID>");
+                player.sendMessage("§b§lBTEG §7» §cNo permission");
                 return true;
             }
         }
