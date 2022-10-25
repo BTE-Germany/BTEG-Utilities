@@ -37,6 +37,8 @@ public class LidarCommand implements CommandExecutor {
                 //CompletableFuture.runAsync(() -> {
                 main(player, region, args);
                // });
+            }else{
+                player.sendMessage("§b§lBTEG §7» §cNo permission for /lidar");
             }
         }
         return true;

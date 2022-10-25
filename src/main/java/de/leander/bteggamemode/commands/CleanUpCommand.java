@@ -19,8 +19,10 @@ public class CleanUpCommand implements CommandExecutor {
         if (!(sender instanceof Player)) { return true; }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("cleanup")||command.getName().equalsIgnoreCase("/cleanup")) {
-            if (player.hasPermission("bteg.cleanup")) {
-                player.chat("//re 1,2,3,4,8,9,10,11,12,13,15,16,17,18,31,37,38,39,40,82,86,106,175 0");
+            if (player.hasPermission("bteg.builder")) {
+                player.chat("//re 4,8,9,10,11,12,13,17,18,31,37,38,39,40,82,86,106,175 0");
+            }else{
+                player.sendMessage("§b§lBTEG §7» §cNo permission for //cleanup");
             }
         }
         return true;

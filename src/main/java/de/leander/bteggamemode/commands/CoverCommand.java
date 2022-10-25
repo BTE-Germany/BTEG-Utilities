@@ -16,35 +16,40 @@ public class CoverCommand  implements CommandExecutor {
         if (!(sender instanceof Player)) { return true; }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("cover")||command.getName().equalsIgnoreCase("/cover")) {
-            if (player.hasPermission("bteg.cover")) {
+            if (player.hasPermission("bteg.builder")) {
 
-                Region region = null;
-                try {
-                    region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
-                } catch (IncompleteRegionException e) {
-                    e.printStackTrace();
+                    Region region = null;
+                    try {
+                        region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
+                    } catch (IncompleteRegionException e) {
+                        e.printStackTrace();
+                        player.sendMessage("§7§l>> §cPlease select a WorldEdit selection!");
+                        return true;
+                    }
+                    EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(region.getWorld(), -1);
+                    LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
+                    localSession.remember(editSession);
+
+                    player.chat("//gmask 0");
+                    player.chat("//re <95:7 159:9");
+                    player.chat("//re >95:7 159:9");
+                    player.chat("//re <95:8 35:7");
+                    player.chat("//re >95:8 35:7");
+                    player.chat("//gmask");
+                    player.chat("//side 95:8 35:7 n n 0");
+                    player.chat("//side 95:8 35:7 e n 0");
+                    player.chat("//side 95:8 35:7 s n 0");
+                    player.chat("//side 95:8 35:7 w n 0");
+                    player.chat("//side 95:7 159:9 n n 0");
+                    player.chat("//side 95:7 159:9 e n 0");
+                    player.chat("//side 95:7 159:9 s n 0");
+                    player.chat("//side 95:7 159:9 w n 0");
+
+
                 }
-                EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(region.getWorld(), -1);
-                LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
-                localSession.remember(editSession);
 
-                player.chat("//gmask 0");
-                player.chat("//re <95:7 159:9");
-                player.chat("//re >95:7 159:9");
-                player.chat("//re <95:8 35:7");
-                player.chat("//re >95:8 35:7");
-                player.chat("//gmask");
-                player.chat("//side 95:8 35:7 n 0");
-                player.chat("//side 95:8 35:7 e 0");
-                player.chat("//side 95:8 35:7 s 0");
-                player.chat("//side 95:8 35:7 w 0");
-                player.chat("//side 95:7 159:9 n 0");
-                player.chat("//side 95:7 159:9 e 0");
-                player.chat("//side 95:7 159:9 s 0");
-                player.chat("//side 95:7 159:9 w 0");
-
-
-            }
+        }else{
+            player.sendMessage("§b§lBTEG §7» §cNo permission for //cover");
         }
         return true;
     }

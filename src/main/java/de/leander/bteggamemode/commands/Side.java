@@ -55,7 +55,7 @@ public class Side implements CommandExecutor {
         if (!(sender instanceof Player)) { return true; }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("side")||command.getName().equalsIgnoreCase("/side")) {
-            if (player.hasPermission("bteg.side")) {
+            if (player.hasPermission("bteg.builder")) {
                 if(args.length == 0) {
                     player.sendMessage("§b§lBTEG §7» §7Usage:");
                     player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
@@ -126,6 +126,8 @@ public class Side implements CommandExecutor {
                 }
 
             }
+        }else{
+            player.sendMessage("§b§lBTEG §7» §cNo permission for //side");
         } return true;
     }
 
@@ -266,9 +268,11 @@ public class Side implements CommandExecutor {
                                                         blocks++;
                                                     }
                                                 } else {
-                                                    world1.getBlockAt(i, j, k - 1).setTypeId(Integer.parseInt(postBlock[0]));
-                                                    world1.getBlockAt(i, j, k - 1).setData((byte) Integer.parseInt(postBlock[1]));
-                                                    blocks++;
+                                                    if (world1.getBlockAt(i, j, k - 1).getTypeId() == Integer.parseInt(mask[0]) && world1.getBlockAt(i, j, k - 1).getData() == Integer.parseInt(mask[1])) {
+                                                        world1.getBlockAt(i, j, k - 1).setTypeId(Integer.parseInt(postBlock[0]));
+                                                        world1.getBlockAt(i, j, k - 1).setData((byte) Integer.parseInt(postBlock[1]));
+                                                        blocks++;
+                                                    }
                                                 }
                                                 break;
                                             }
@@ -280,9 +284,11 @@ public class Side implements CommandExecutor {
                                                         blocks++;
                                                     }
                                                 } else {
-                                                    world1.getBlockAt(i + 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
-                                                    world1.getBlockAt(i + 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
-                                                    blocks++;
+                                                    if (world1.getBlockAt(i + 1, j, k).getTypeId() == Integer.parseInt(mask[0]) && world1.getBlockAt(+ 1 , j, k ).getData() == Integer.parseInt(mask[1])) {
+                                                        world1.getBlockAt(i + 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
+                                                        world1.getBlockAt(i + 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                                        blocks++;
+                                                    }
                                                 }
                                                 break;
                                             }
@@ -294,9 +300,11 @@ public class Side implements CommandExecutor {
                                                         blocks++;
                                                     }
                                                 } else {
-                                                    world1.getBlockAt(i, j, k + 1).setTypeId(Integer.parseInt(postBlock[0]));
-                                                    world1.getBlockAt(i, j, k + 1).setData((byte) Integer.parseInt(postBlock[1]));
-                                                    blocks++;
+                                                    if (world1.getBlockAt(i, j, k + 1).getTypeId() == Integer.parseInt(mask[0]) && world1.getBlockAt(i, j, k + 1 ).getData() == Integer.parseInt(mask[1])) {
+                                                        world1.getBlockAt(i, j, k + 1).setTypeId(Integer.parseInt(postBlock[0]));
+                                                        world1.getBlockAt(i, j, k + 1).setData((byte) Integer.parseInt(postBlock[1]));
+                                                        blocks++;
+                                                    }
                                                 }
                                                 break;
                                             }
@@ -308,9 +316,11 @@ public class Side implements CommandExecutor {
                                                         blocks++;
                                                     }
                                                 } else {
-                                                    world1.getBlockAt(i - 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
-                                                    world1.getBlockAt(i - 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
-                                                    blocks++;
+                                                    if (world1.getBlockAt(i - 1, j, k).getTypeId() == Integer.parseInt(mask[0]) && world1.getBlockAt(i - 1, j, k).getData() == Integer.parseInt(mask[1])) {
+                                                        world1.getBlockAt(i - 1, j, k).setTypeId(Integer.parseInt(postBlock[0]));
+                                                        world1.getBlockAt(i - 1, j, k).setData((byte) Integer.parseInt(postBlock[1]));
+                                                        blocks++;
+                                                    }
                                                 }
                                                 break;
                                             }

@@ -62,7 +62,7 @@ public class Terraform implements CommandExecutor {
         if (!(sender instanceof Player)) { return true; }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("terraform")) {
-            if (player.hasPermission("bteg.terraform")) {
+            if (player.hasPermission("bteg.builder")) {
                 if (args[0].equals("undo")) {
                     load(player);
                     return true;

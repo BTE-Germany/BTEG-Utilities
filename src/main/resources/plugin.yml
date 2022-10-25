@@ -8,7 +8,7 @@ website: bte-germany.de
 commands:
   lidar:
     description: Saves blocks - regenerates region - replaces surfaces blocks with saved blocks
-    usage: /lidar
+    usage: /lidar <save>
     aliases:
       - /lidar
   terraform:
@@ -21,7 +21,7 @@ commands:
     usage: /speed <Number>
   /side:
     description: Replaces blocks sideways
-    usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]>
+    usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>
     aliases:
       - side
   cleanup:
@@ -36,7 +36,7 @@ commands:
         - /cover
   rail:
     description: Builds rails
-    usage: /rail <Block-ID>
+    usage: /rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <rails-in-ground[y,n]>
     aliases:
       - /rail
   connect:

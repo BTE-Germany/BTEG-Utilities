@@ -49,7 +49,7 @@ public class ConnectCommand implements CommandExecutor {
         if (!(sender instanceof Player)) { return true; }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("connect")||command.getName().equalsIgnoreCase("/connect")) {
-            if (player.hasPermission("bteg.connect")) {
+            if (player.hasPermission("bteg.builder")) {
                 if (args.length == 1) {
                     if (args[0].equals("undo")) {
                         load(player);
@@ -70,7 +70,7 @@ public class ConnectCommand implements CommandExecutor {
                     return true;
                 }
             }else{
-                player.sendMessage("§b§lBTEG §7» §cNo permission");
+                player.sendMessage("§b§lBTEG §7» §cNo permission for //connect");
                 return true;
             }
         }
@@ -131,8 +131,17 @@ public class ConnectCommand implements CommandExecutor {
             WorldEditPlugin worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
             WorldEdit we = worldEdit.getWorldEdit();
 
-            int blockID = Integer.parseInt(pattern);
-            BaseBlock b = new BaseBlock(blockID);
+
+            BaseBlock b;
+            if(pattern.contains(":")){
+                String[] block = pattern.split(":");
+                b = new BaseBlock(Integer.parseInt(block[0]));
+                b.setData(Integer.parseInt(block[1]));
+            }else{
+                int blockID = Integer.parseInt(pattern);
+                b = new BaseBlock(blockID);
+            }
+
             List<BlockChance> blocks = new ArrayList<BlockChance>();
             blocks.add(new BlockChance(b, 1));
 

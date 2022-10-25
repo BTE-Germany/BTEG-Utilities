@@ -60,7 +60,24 @@ public class RailCommand implements CommandExecutor {
                     }
                     koordinaten = BlockVector.toBlockPoint(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
                     backup(region,player);
-
+                    ArrayList<de.leander.bteggamemode.util.Block> blocks = null;
+                    boolean inGround = false;
+                    if(args.length==4) {
+                        if(args[3].equalsIgnoreCase("y")) {
+                                inGround = true;
+                                blocks = new ArrayList<>();
+                                for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
+                                    //for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
+                                    for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
+                                        if (region.contains(new Vector(i, world.getHighestBlockYAt(i, k), k))) {
+                                            Block block = world.getBlockAt(i, world.getHighestBlockYAt(i, k) - 1, k);
+                                            blocks.add(new de.leander.bteggamemode.util.Block(block.getX(), block.getZ(), block.getType(), block.getData()));
+                                        }
+                                    }
+                                    //  }
+                                }
+                        }
+                    }
                     String anvils = "145";
                     if(getDirection(player).equalsIgnoreCase("east")||getDirection(player).equalsIgnoreCase("west")){
                         player.chat("//side "+args[0]+" 0 n y");
@@ -117,7 +134,7 @@ public class RailCommand implements CommandExecutor {
                         player.chat("//side 35:9 239 n");
                         player.chat("//side 35:9 239 s");
 
-                        if(args.length==1 || args.length == 2|| (args.length==3 && !args[2].equalsIgnoreCase("0"))){
+                        if(args.length==1 || args.length == 2|| ((args.length==3 || args.length==4) && !args[2].equalsIgnoreCase("0"))){
                             player.chat("//side 249 243 n");
                             player.chat("//side 249 243 s");
 
@@ -131,7 +148,7 @@ public class RailCommand implements CommandExecutor {
                         player.chat("//side 35:9 239 w");
                         player.chat("//side 35:9 239 e");
 
-                        if(args.length==1 || args.length == 2 || (args.length==3 && !args[2].equalsIgnoreCase("0"))){
+                        if(args.length==1 || args.length == 2 || ((args.length==3 || args.length==4) && !args[2].equalsIgnoreCase("0"))){
                             player.chat("//side 249 243 w");
                             player.chat("//side 249 243 e");
 
@@ -142,20 +159,46 @@ public class RailCommand implements CommandExecutor {
                     }
                     player.chat("//re 249,239 "+anvils);
                     if(args.length>1){
-                        player.chat("//re 243,35:6 "+args[1]);
+                        if(!inGround) {
+                            player.chat("//re 243,35:6 " + args[1]);
+                        }
+                        else{
+                            player.chat("//re 243 " + args[1]);
+                        }
                     }else{
                         player.chat("//re 243 44");
                     }
 
-                    player.chat("//re 242,35:9 0");
+                    if(!inGround) {
+                        player.chat("//re 242,35:9 0");
+                    }else{
+                        player.chat("//re 242 0");
+                        player.chat("//re 35:9,35:6 "+args[0]);
+                    }
                     if(args.length>=2) {
                         if (args[1].equalsIgnoreCase("0")) {
                             //player.chat("//re "+args[1]+" 0");
                         }
                     }
+                    if(inGround) {
+                        for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
+                            for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
+                                if (region.contains(new Vector(i, world.getHighestBlockYAt(i, k) - 1, k))) {
+                                    for (de.leander.bteggamemode.util.Block savedBlock : blocks) {
+                                        Block surfaceBlock = world.getBlockAt(i, savedBlock.getY(), k);
+                                        if (savedBlock.getX() == surfaceBlock.getLocation().getBlockX() && savedBlock.getZ() == surfaceBlock.getLocation().getBlockZ() && surfaceBlock.getTypeId() == 0) {
+                                            surfaceBlock.setType(savedBlock.getMat());
+                                            surfaceBlock.setData(savedBlock.getData());
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
                 }else{
                     player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside>");
+                    player.sendMessage("§b§lBTEG §7» §7//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <rails-in-ground[y,n]>");
                 }
 
             }
