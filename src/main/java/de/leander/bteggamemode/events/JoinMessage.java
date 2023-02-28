@@ -12,7 +12,7 @@ public class JoinMessage implements Listener {
     @EventHandler
     public static void onPLayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        event.setJoinMessage("§b§lBTEG §7» " + player.getDisplayName()+ " switched to §a"+Bukkit.getServerName()+"");
+        event.setJoinMessage("§b§lBTEG §7» " + player.getDisplayName()+ " switched to §a"+Bukkit.getServer().getName()+"");
 
     }
 

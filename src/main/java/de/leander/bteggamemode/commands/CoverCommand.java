@@ -36,14 +36,14 @@ public class CoverCommand  implements CommandExecutor {
                     player.chat("//re <95:8 35:7");
                     player.chat("//re >95:8 35:7");
                     player.chat("//gmask");
-                    player.chat("//side 95:8 35:7 n n 0");
-                    player.chat("//side 95:8 35:7 e n 0");
-                    player.chat("//side 95:8 35:7 s n 0");
-                    player.chat("//side 95:8 35:7 w n 0");
-                    player.chat("//side 95:7 159:9 n n 0");
-                    player.chat("//side 95:7 159:9 e n 0");
-                    player.chat("//side 95:7 159:9 s n 0");
-                    player.chat("//side 95:7 159:9 w n 0");
+                    player.chat("//side light_gray_stained_glass gray_wool n n air");
+                    player.chat("//side light_gray_stained_glass gray_wool e n air");
+                    player.chat("//side light_gray_stained_glass gray_wool s n air");
+                    player.chat("//side light_gray_stained_glass gray_wool w n air");
+                    player.chat("//side gray_stained_glass cyan_terracotta n n air");
+                    player.chat("//side gray_stained_glass cyan_terracotta e n air");
+                    player.chat("//side gray_stained_glass cyan_terracotta s n air");
+                    player.chat("//side gray_stained_glass cyan_terracotta w n air");
 
 
                 }

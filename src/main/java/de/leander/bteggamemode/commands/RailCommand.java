@@ -1,23 +1,24 @@
 package de.leander.bteggamemode.commands;
 
 import com.sk89q.worldedit.*;
-import com.sk89q.worldedit.blocks.BaseBlock;
+
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.bukkit.BukkitPlayer;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldedit.bukkit.selections.CuboidSelection;
-import com.sk89q.worldedit.bukkit.selections.Selection;
+
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
-import com.sk89q.worldedit.patterns.BlockChance;
-import com.sk89q.worldedit.patterns.RandomFillPattern;
-import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.regions.Polygonal2DRegion;
+
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.regions.RegionOperationException;
 import com.sk89q.worldedit.session.ClipboardHolder;
-import com.sk89q.worldedit.world.registry.WorldData;
+
+import com.sk89q.worldedit.session.SessionManager;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
+
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
@@ -33,8 +34,8 @@ import java.util.List;
 public class RailCommand implements CommandExecutor {
 
     static Clipboard backup;
-    static CuboidClipboard clipboard;
-    static BlockVector koordinaten;
+    static Clipboard clipboard;
+    static BlockVector3 koordinaten;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -58,20 +59,20 @@ public class RailCommand implements CommandExecutor {
                         player.sendMessage("§b§lBTEG §7» §cPlease select a WorldEdit selection!");
                         return true;
                     }
-                    koordinaten = BlockVector.toBlockPoint(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
+                    koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
                     backup(region,player);
                     ArrayList<de.leander.bteggamemode.util.Block> blocks = null;
                     boolean inGround = false;
-                    if(args.length==4) {
-                        if(args[3].equalsIgnoreCase("y")) {
+                    if(args.length==5) {
+                        if(args[4].equalsIgnoreCase("y")) {
                                 inGround = true;
                                 blocks = new ArrayList<>();
                                 for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                                     //for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
                                     for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
-                                        if (region.contains(new Vector(i, world.getHighestBlockYAt(i, k), k))) {
+                                        if (region.contains(BlockVector3.at(i, world.getHighestBlockYAt(i, k), k))) {
                                             Block block = world.getBlockAt(i, world.getHighestBlockYAt(i, k) - 1, k);
-                                            blocks.add(new de.leander.bteggamemode.util.Block(block.getX(), block.getZ(), block.getType(), block.getData()));
+                                            blocks.add(new de.leander.bteggamemode.util.Block(block.getX(), block.getZ(), block.getType()));
                                         }
                                     }
                                     //  }
@@ -80,11 +81,11 @@ public class RailCommand implements CommandExecutor {
                     }
                     String anvils = "145";
                     if(getDirection(player).equalsIgnoreCase("east")||getDirection(player).equalsIgnoreCase("west")){
-                        player.chat("//side "+args[0]+" 0 n y");
-                        anvils = "145:1";
+                        player.chat("//side "+args[0]+" air n y");
+                        anvils = "anvil:1";
                     }else if(getDirection(player).equalsIgnoreCase("north")||getDirection(player).equalsIgnoreCase("south")){
-                        player.chat("//side "+args[0]+" 0 e y");
-                        anvils = "145";
+                        player.chat("//side "+args[0]+" air e y");
+                        anvils = "anvil";
                     }
 
 
@@ -93,28 +94,24 @@ public class RailCommand implements CommandExecutor {
                     for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                         for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
                             for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
-                                if (region.contains(new Vector(i, j, k))) {
+                                if (region.contains(BlockVector3.at(i, j, k))) {
                                     Block block = world.getBlockAt(i, j, k);
-                                    if (block.getTypeId() == Integer.parseInt(args[0])) {
+                                    if (block.getType().toString().equalsIgnoreCase(args[0])) {
                                         switch (getDirection(player)) {
                                             case "NORTH":
                                             case "SOUTH":
                                                 if(block.getLocation().getBlockZ()% 2 == 0) {
-                                                    world.getBlockAt(i, j, k).setTypeId(35);
-                                                    world.getBlockAt(i, j, k).setData((byte) 6);
+                                                    world.getBlockAt(i, j, k).setType(Material.PINK_WOOL);
                                                 }else{
-                                                    world.getBlockAt(i, j, k).setTypeId(35);
-                                                    world.getBlockAt(i, j, k).setData((byte) 9);
+                                                    world.getBlockAt(i, j, k).setType(Material.CYAN_WOOL);
                                                 }
                                                 break;
                                             case "EAST":
                                             case "WEST":
                                                 if(block.getLocation().getBlockX()% 2 == 0) {
-                                                    world.getBlockAt(i, j, k).setTypeId(35);
-                                                    world.getBlockAt(i, j, k).setData((byte) 6);
+                                                    world.getBlockAt(i, j, k).setType(Material.PINK_WOOL);
                                                 }else{
-                                                    world.getBlockAt(i, j, k).setTypeId(35);
-                                                    world.getBlockAt(i, j, k).setData((byte) 9);
+                                                    world.getBlockAt(i, j, k).setType(Material.CYAN_WOOL);
                                                 }
                                                 break;
                                         }
@@ -126,34 +123,37 @@ public class RailCommand implements CommandExecutor {
 
                     // Schienen mit verschiedenen Ausrichtungen vom NOrmen HUb nach verschiedenen winkeln pasten
 
-                    //player.chat("//re "+args[0]+" #clipboard");
+
                     if(getDirection(player).equalsIgnoreCase("east")||getDirection(player).equalsIgnoreCase("west")){
-                        player.chat("//side 35:6 249 n");
-                        player.chat("//side 35:6 249 s");
+                        overheadLines(args, player, region);
+                        player.chat("//side pink_wool red_glazed_terracotta n");
+                        player.chat("//side pink_wool red_glazed_terracotta s");
 
-                        player.chat("//side 35:9 239 n");
-                        player.chat("//side 35:9 239 s");
+                        player.chat("//side cyan_wool yellow_glazed_terracotta n");
+                        player.chat("//side cyan_wool yellow_glazed_terracotta s");
 
-                        if(args.length==1 || args.length == 2|| ((args.length==3 || args.length==4) && !args[2].equalsIgnoreCase("0"))){
-                            player.chat("//side 249 243 n");
-                            player.chat("//side 249 243 s");
+                        if(args.length==1 || args.length == 2|| ((args.length==3 || args.length>=4) && !args[2].equalsIgnoreCase("0"))){
+                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta n");
+                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta s");
 
-                            player.chat("//side 239 242 n");
-                            player.chat("//side 239 242 s");
+                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta n");
+                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta s");
                         }
+                        overheadLines(args, player, region);
                     }else if(getDirection(player).equalsIgnoreCase("north")||getDirection(player).equalsIgnoreCase("south")){
-                        player.chat("//side 35:6 249 w");
-                        player.chat("//side 35:6 249 e");
+                        overheadLines(args, player, region);
+                        player.chat("//side pink_wool red_glazed_terracotta w");
+                        player.chat("//side pink_wool red_glazed_terracotta e");
 
-                        player.chat("//side 35:9 239 w");
-                        player.chat("//side 35:9 239 e");
+                        player.chat("//side cyan_wool yellow_glazed_terracotta w");
+                        player.chat("//side cyan_wool yellow_glazed_terracotta e");
 
-                        if(args.length==1 || args.length == 2 || ((args.length==3 || args.length==4) && !args[2].equalsIgnoreCase("0"))){
-                            player.chat("//side 249 243 w");
-                            player.chat("//side 249 243 e");
+                        if(args.length==1 || args.length == 2 || ((args.length==3 || args.length>=4) && !args[2].equalsIgnoreCase("0"))){
+                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta w");
+                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta e");
 
-                            player.chat("//side 239 242 w");
-                            player.chat("//side 239 242 e");
+                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta w");
+                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta e");
                         }
 
                     }
@@ -183,12 +183,11 @@ public class RailCommand implements CommandExecutor {
                     if(inGround) {
                         for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                             for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
-                                if (region.contains(new Vector(i, world.getHighestBlockYAt(i, k) - 1, k))) {
+                                if (region.contains(BlockVector3.at(i, world.getHighestBlockYAt(i, k) - 1, k))) {
                                     for (de.leander.bteggamemode.util.Block savedBlock : blocks) {
                                         Block surfaceBlock = world.getBlockAt(i, savedBlock.getY(), k);
-                                        if (savedBlock.getX() == surfaceBlock.getLocation().getBlockX() && savedBlock.getZ() == surfaceBlock.getLocation().getBlockZ() && surfaceBlock.getTypeId() == 0) {
+                                        if (savedBlock.getX() == surfaceBlock.getLocation().getBlockX() && savedBlock.getZ() == surfaceBlock.getLocation().getBlockZ()) {
                                             surfaceBlock.setType(savedBlock.getMat());
-                                            surfaceBlock.setData(savedBlock.getData());
                                         }
                                     }
                                 }
@@ -198,12 +197,33 @@ public class RailCommand implements CommandExecutor {
                     }
                 }else{
                     player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <rails-in-ground[y,n]>");
+                    player.sendMessage("§b§lBTEG §7» §7//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
                 }
 
             }
         }
         return true;
+    }
+
+    private void overheadLines(String[] args, Player player, Region region) {
+        if(args.length>=4){
+            if(args[3].equalsIgnoreCase("y")) {
+                try {
+                    region.expand(BlockVector3.at(0,8,0));
+                } catch (RegionOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                player.chat("//re >35:6 250");
+                player.chat("//re >35:9 250");
+                player.chat("//re >250 250");
+                player.chat("//re >250 250");
+                player.chat("//re >250 250");
+                player.chat("//re >250 250");
+                player.chat("//re >250 250");
+                player.chat("//re >250 101");
+                player.chat("//re 250 0");
+            }
+        }
     }
 
     public static String getDirection(Player player) {
@@ -224,26 +244,19 @@ public class RailCommand implements CommandExecutor {
     }
 
     private static void backup(Region pRegion,Player player){
-        WorldEditPlugin worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
-        WorldEdit we = worldEdit.getWorldEdit();
-
-        WorldData data = pRegion.getWorld().getWorldData();
-
-
         backup = new BlockArrayClipboard(pRegion);
-
-        LocalPlayer localPlayer = worldEdit.wrapPlayer(player);
-        LocalSession localSession = we.getSession(localPlayer);
-        ClipboardHolder selection = new ClipboardHolder(backup, data); //localSession.getClipboard();
-        EditSession editSession = localSession.createEditSession(localPlayer);
-
-        Vector min = selection.getClipboard().getMinimumPoint();
-        Vector max = selection.getClipboard().getMaximumPoint();
-
+        BukkitPlayer actor = BukkitAdapter.adapt(player);
+        SessionManager manager = WorldEdit.getInstance().getSessionManager();
+        LocalSession localSession = manager.get(actor);
+        ClipboardHolder selection = new ClipboardHolder(backup);
+        EditSession editSession = localSession.createEditSession(actor);
+        BlockVector3 min = selection.getClipboard().getMinimumPoint();
+        BlockVector3 max = selection.getClipboard().getMaximumPoint();
         editSession.enableQueue();
-        clipboard = new CuboidClipboard(max.subtract(min).add(new Vector(1, 1, 1)), min);
+        /*
+        clipboard = new Clipboard(max.subtract(min).add(BlockVector3.at(1, 1, 1)), min);
         clipboard.copy(editSession);
-
+         */
         localSession.remember(editSession);
         editSession.flushQueue();
     }
@@ -251,10 +264,10 @@ public class RailCommand implements CommandExecutor {
     private void load(Player player) {
         try {
             //
-            EditSession editSession = new EditSession(new BukkitWorld(player.getWorld()), -1);
+            EditSession editSession = new EditSessionFactory().getEditSession(new BukkitWorld(player.getWorld()), -1);
             editSession.enableQueue();
 
-            clipboard.paste(editSession, koordinaten,false,true);
+            clipboard.paste(editSession, koordinaten,false,null);
             editSession.flushQueue();
 
 

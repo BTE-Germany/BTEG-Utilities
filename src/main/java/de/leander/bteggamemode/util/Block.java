@@ -8,13 +8,13 @@ public class Block {
     int y;
     int z;
     Material mat;
-    byte data;
 
-    public Block(int x, int z, Material mat, byte data) {
+
+    public Block(int x, int z, Material mat) {
         this.x = x;
         this.z = z;
         this.mat = mat;
-        this.data = data;
+
     }
 
     public void setX(int x) {
@@ -31,9 +31,7 @@ public class Block {
         this.mat = mat;
     }
 
-    public void setData(byte data) {
-        this.data = data;
-    }
+
 
     public int getX() {
         return x;
@@ -49,7 +47,5 @@ public class Block {
         return mat;
     }
 
-    public byte getData() {
-        return data;
-    }
+
 }

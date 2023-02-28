@@ -13,7 +13,7 @@ public final class BTEGGamemode extends JavaPlugin {
     public void onEnable() {
         getServer().getPluginManager().registerEvents(new SetGamemode(), this);
         getServer().getPluginManager().registerEvents(new JoinMessage(), this);
-        getServer().getPluginManager().registerEvents(new BedrockTerraBlock(), this);
+        //getServer().getPluginManager().registerEvents(new BedrockTerraBlock(), this); Bedrock can join on 1.18+
         getCommand("terraform").setExecutor(new Terraform(this));
         getCommand("cover").setExecutor(new CoverCommand());
         getCommand("lidar").setExecutor(new LidarCommand());
