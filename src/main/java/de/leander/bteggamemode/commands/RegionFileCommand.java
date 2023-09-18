@@ -31,9 +31,18 @@ public class RegionFileCommand implements CommandExecutor {
         if(new File(player.getWorld().getWorldFolder().getAbsolutePath() + "region3d").exists() || (args.length == 1 && args[0].equalsIgnoreCase("cc"))) {
             isVanilla = false;
         }
+        /*
         int chunkX = (int) x >> 4;
         int chunkZ = (int) z >> 4;
         int regionX = chunkX >> 5;
+        int regionZ = chunkZ >> 5;
+         */
+
+        int chunkX = x >> 4;
+        int chunkZ = z >> 4;
+        int region3dX = chunkX >> 4;
+        int regionX = chunkX >> 5;
+        int region3dZ = chunkZ >> 4;
         int regionZ = chunkZ >> 5;
 
         if(isVanilla){
@@ -45,7 +54,7 @@ public class RegionFileCommand implements CommandExecutor {
 
             player.sendMessage(click);
         }else{
-            String region3dFile = (regionX*2)+"."+"0"+"."+(regionZ*2)+".3dr";
+            String region3dFile = region3dX+"."+"0"+"."+region3dZ+".3dr";
             String region2dFile = regionX+"."+regionZ+".2dr";
 
             Component message1 = Component.text(BTEGGamemode.prefix + "Region3d file: §9" +region3dFile);
