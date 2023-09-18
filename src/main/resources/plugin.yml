@@ -4,9 +4,14 @@ main: de.leander.bteggamemode.BTEGGamemode
 authors: [ Leander ]
 description: This plugin sets users gamemode to spectator or visitor (checks for permission node) when a player joins a server.
 website: bte-germany.de
-api-version: 1.19
+api-version: 1.18
 
 commands:
+  regionfile:
+    description: Gets the region file of the current location
+    usage: /regionfile <cc>
+    aliases:
+      - /rgf
   lidar:
     description: Saves blocks - regenerates region - replaces surfaces blocks with saved blocks
     usage: /lidar <save>

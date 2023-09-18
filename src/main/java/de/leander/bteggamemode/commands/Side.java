@@ -16,6 +16,7 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.session.SessionOwner;
+import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -65,9 +66,9 @@ public class Side implements CommandExecutor {
         if (command.getName().equalsIgnoreCase("side")||command.getName().equalsIgnoreCase("/side")) {
             if (player.hasPermission("bteg.builder")) {
                 if(args.length == 0) {
-                    player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
-                    player.sendMessage("§b§lBTEG §7» §7//side <undo>");
+                    player.sendMessage(BTEGGamemode.prefix + "Usage:");
+                    player.sendMessage(BTEGGamemode.prefix + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+                    player.sendMessage(BTEGGamemode.prefix + "//side <undo>");
                     return true;
                 }
                 else if(args.length == 1){
@@ -75,9 +76,9 @@ public class Side implements CommandExecutor {
                         load(player);
                         return true;
                     }else{
-                        player.sendMessage("§b§lBTEG §7» §7Usage:");
-                        player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
-                        player.sendMessage("§b§lBTEG §7» §7//side <undo>");
+                        player.sendMessage(BTEGGamemode.prefix + "Usage:");
+                        player.sendMessage(BTEGGamemode.prefix + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+                        player.sendMessage(BTEGGamemode.prefix + "//side <undo>");
                         return true;
                     }
                 }
@@ -94,8 +95,8 @@ public class Side implements CommandExecutor {
                             } else if (args[3].equalsIgnoreCase("n") || args[3].equalsIgnoreCase("no")) {
                                 ignoreSameBlock = false;
                             }else{
-                                player.sendMessage("§b§lBTEG §7» §cWrong usage:");
-                                player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+                                player.sendMessage(BTEGGamemode.prefix + "§cWrong usage:");
+                                player.sendMessage(BTEGGamemode.prefix + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
                                 return true;
                             }
 
@@ -116,15 +117,15 @@ public class Side implements CommandExecutor {
                     return true;
                 }
                 else{
-                    player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
-                    player.sendMessage("§b§lBTEG §7» §7//side <undo>");
+                    player.sendMessage(BTEGGamemode.prefix + "Usage:");
+                    player.sendMessage(BTEGGamemode.prefix + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+                    player.sendMessage(BTEGGamemode.prefix + "//side <undo>");
                     return true;
                 }
 
             }
         }else{
-            player.sendMessage("§b§lBTEG §7» §cNo permission for //side");
+            player.sendMessage(BTEGGamemode.prefix + "§cNo permission for //side");
         } return true;
     }
 
@@ -316,7 +317,7 @@ public class Side implements CommandExecutor {
             }
 
         }
-        player.sendMessage("§b§lBTEG §7» §7Successfully replaced §6§l"+blocks+" §r§7blocks sideways!");
+        player.sendMessage(BTEGGamemode.prefix + "Successfully replaced §6§l"+blocks+" §r§7blocks sideways!");
         ignoreSameBlock = false;
         masks = null;
         return;
@@ -350,7 +351,7 @@ public class Side implements CommandExecutor {
             clipboard.paste(editSession, koordinaten,false,null);
             editSession.flushQueue();
 
-            player.sendMessage("§b§lBTEG §7» §7Undo succesful!");
+            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
 
         } catch (WorldEditException exception) {
             exception.printStackTrace();

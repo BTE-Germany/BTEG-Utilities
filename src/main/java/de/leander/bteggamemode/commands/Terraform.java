@@ -13,6 +13,7 @@ import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
+import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -76,7 +77,7 @@ public class Terraform implements CommandExecutor {
             plotRegion = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException ex) {
             ex.printStackTrace();
-            player.sendMessage("§b§lBTEG §7» §cPlease select a WorldEdit selection!");
+            player.sendMessage(BTEGGamemode.prefix + "§cPlease select a WorldEdit selection!");
             return;
         }
         try {
@@ -85,7 +86,7 @@ public class Terraform implements CommandExecutor {
                 // Cast WorldEdit region to polygonal region
                 polyRegion = (Polygonal2DRegion) plotRegion;
                 if (polyRegion.getLength() > 300 || polyRegion.getWidth() > 300 || polyRegion.getHeight() > 60) {
-                    player.sendMessage("§b§lBTEG §7» §cPlease adjust your selection size!");
+                    player.sendMessage(BTEGGamemode.prefix + "§cPlease adjust your selection size!");
                     return;
                 }
                 // Set minimum selection height under player location
@@ -96,12 +97,12 @@ public class Terraform implements CommandExecutor {
                 polyRegion.setMaximumY(height + 35);
 
             } else {
-                player.sendMessage("§b§lBTEG §7» §cPlease use poly selection to terraform!");
+                player.sendMessage(BTEGGamemode.prefix + "§cPlease use poly selection to terraform!");
                 return;
             }
 
         } catch (Exception ex) {
-            player.sendMessage("§b§lBTEG §7» §cAn error occurred while select this area!");
+            player.sendMessage(BTEGGamemode.prefix + "§cAn error occurred while select this area!");
             return;
         }
 
@@ -116,10 +117,10 @@ public class Terraform implements CommandExecutor {
         BlockVector3 centerBlock = region.getCenter().toBlockPoint();
         runterterraformen = height < player.getWorld().getHighestBlockAt(centerBlock.getBlockX(), centerBlock.getBlockZ()).getY() - 1;
         if ( region.getHeight() > 50){
-            player.sendMessage("§b§lBTEG §7» §7You cannot terraform areas with height more than 50 blocks difference!");
+            player.sendMessage(BTEGGamemode.prefix + "You cannot terraform areas with height more than 50 blocks difference!");
             return;
         }else {
-            player.sendMessage("§b§lBTEG §7» §7Terraforming started. Please wait a short moment!");
+            player.sendMessage(BTEGGamemode.prefix + "Terraforming started. Please wait a short moment!");
           //  player.performCommand("/copy"); // Am anfang benutzt aber speichern des clipboards funktioniert jetzt nur mit der worldedit api
             //WorldEdit CLipboard backup
             backup(polyRegion, player);
@@ -199,7 +200,7 @@ public class Terraform implements CommandExecutor {
             }
             polyRegion.setMinimumY(preHeight[0]);
             polyRegion.setMaximumY(preHeight[1]);
-            player.sendMessage("§b§lBTEG §7» §7Area succesfully terraformed to height §l"+(height+1)+"! Type </terraform undo> for undo.");
+            player.sendMessage(BTEGGamemode.prefix + "Area succesfully terraformed to height §l"+(height+1)+"! Type </terraform undo> for undo.");
         }
     }
 
@@ -228,7 +229,7 @@ public class Terraform implements CommandExecutor {
             editSession.enableQueue();
             clipboard.paste(editSession, koordinaten,false,null);
             editSession.flushQueue();
-            player.sendMessage("§b§lBTEG §7» §7Undo succesful!");
+            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
             } catch (WorldEditException exception) {
                 exception.printStackTrace();
             }

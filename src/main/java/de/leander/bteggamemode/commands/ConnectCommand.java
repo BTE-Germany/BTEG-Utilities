@@ -17,6 +17,7 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.block.*;
+import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -53,7 +54,11 @@ public class ConnectCommand implements CommandExecutor {
                         return true;
                     } else {
                         try {
-                            terraform(player, args[0]);
+                            if(args[0].equalsIgnoreCase("plot")){
+                                terraform(player, args[0],true);
+                            }else{
+                                terraform(player, args[0],false);
+                            }
                         } catch (MaxChangedBlocksException | EmptyClipboardException e) {
                             e.printStackTrace();
                         }
@@ -62,19 +67,19 @@ public class ConnectCommand implements CommandExecutor {
                         return true;
                     }
                 }else{
-                    player.sendMessage("§b§lBTEG §7» §cWrong usage");
-                    player.sendMessage("§b§lBTEG §7» §7/connect <Block-ID>");
+                    player.sendMessage(BTEGGamemode.prefix + "§cWrong usage");
+                    player.sendMessage(BTEGGamemode.prefix + "/connect <Block-ID>");
                     return true;
                 }
             }else{
-                player.sendMessage("§b§lBTEG §7» §cNo permission for //connect");
+                player.sendMessage(BTEGGamemode.prefix + "§cNo permission for //connect");
                 return true;
             }
         }
         return true;
     }
 
-    void terraform(Player player, String pattern) throws MaxChangedBlocksException, EmptyClipboardException {
+    void terraform(Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
         Region plotRegion;
         // Get WorldEdit selection of player
         try {
@@ -105,13 +110,13 @@ public class ConnectCommand implements CommandExecutor {
             return;
         }
 
-        line(polyRegion, player, pattern);
+        line(polyRegion, player, pattern, plot);
 
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 
     }
 
-    private static void line(Region region, Player player, String pattern) throws MaxChangedBlocksException, EmptyClipboardException {
+    private static void line(Region region, Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
             world1 = player.getWorld();
 
             //WorldEdit CLipboard backup
@@ -122,7 +127,12 @@ public class ConnectCommand implements CommandExecutor {
             int y = polyRegion.getMaximumPoint().getBlockY();
             WorldEditPlugin worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
 
-            BlockType blockType = BlockTypes.get(pattern.toLowerCase());
+            BlockType blockType;
+            if(plot){
+                blockType = BlockTypes.get("lapis_block");
+            }else {
+                blockType = BlockTypes.get(pattern.toLowerCase());
+            }
 
             BlockState blockState = blockType.getDefaultState();
 
@@ -146,8 +156,13 @@ public class ConnectCommand implements CommandExecutor {
                     localSession.remember(editSession);
                 }
             }
+            if(plot){
+                player.chat("//re !22 82");
+                player.sendMessage(BTEGGamemode.prefix + "Successfully prepared plot!");
+            }else{
+                player.sendMessage(BTEGGamemode.prefix + "Blocks successfully connected!");
+            }
 
-            player.sendMessage("§b§lBTEG §7» §7Blocks successfully connected!");
 
     }
 
@@ -177,7 +192,7 @@ public class ConnectCommand implements CommandExecutor {
             editSession.enableQueue();
             clipboard.paste(editSession, koordinaten,false,null);
             editSession.flushQueue();
-            player.sendMessage("§b§lBTEG §7» §7Undo succesful!");
+            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
         } catch (WorldEditException exception) {
             exception.printStackTrace();
         }

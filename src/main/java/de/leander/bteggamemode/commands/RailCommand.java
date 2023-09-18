@@ -16,6 +16,7 @@ import com.sk89q.worldedit.regions.RegionOperationException;
 import com.sk89q.worldedit.session.ClipboardHolder;
 
 import com.sk89q.worldedit.session.SessionManager;
+import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.Bukkit;
 
 import org.bukkit.Material;
@@ -56,7 +57,7 @@ public class RailCommand implements CommandExecutor {
                         region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
                     } catch (NullPointerException | IncompleteRegionException ex) {
                         ex.printStackTrace();
-                        player.sendMessage("§b§lBTEG §7» §cPlease select a WorldEdit selection!");
+                        player.sendMessage(BTEGGamemode.prefix + "§cPlease select a WorldEdit selection!");
                         return true;
                     }
                     koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
@@ -196,8 +197,8 @@ public class RailCommand implements CommandExecutor {
                         }
                     }
                 }else{
-                    player.sendMessage("§b§lBTEG §7» §7Usage:");
-                    player.sendMessage("§b§lBTEG §7» §7//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
+                    player.sendMessage(BTEGGamemode.prefix + "Usage:");
+                    player.sendMessage(BTEGGamemode.prefix + "//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
                 }
 
             }
@@ -271,7 +272,7 @@ public class RailCommand implements CommandExecutor {
             editSession.flushQueue();
 
 
-            player.sendMessage("§b§lBTEG §7» §7Undo succesful!");
+            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
 
         } catch (WorldEditException exception) {
             exception.printStackTrace();

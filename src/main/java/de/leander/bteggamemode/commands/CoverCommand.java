@@ -5,6 +5,7 @@ import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.regions.Region;
+import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,7 +24,7 @@ public class CoverCommand  implements CommandExecutor {
                         region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
                     } catch (IncompleteRegionException e) {
                         e.printStackTrace();
-                        player.sendMessage("§7§l>> §cPlease select a WorldEdit selection!");
+                        player.sendMessage(BTEGGamemode.prefix + "§cPlease select a WorldEdit selection!");
                         return true;
                     }
                     EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(region.getWorld(), -1);
@@ -45,11 +46,10 @@ public class CoverCommand  implements CommandExecutor {
                     player.chat("//side gray_stained_glass cyan_terracotta s n air");
                     player.chat("//side gray_stained_glass cyan_terracotta w n air");
 
-
                 }
 
         }else{
-            player.sendMessage("§b§lBTEG §7» §cNo permission for //cover");
+            player.sendMessage(BTEGGamemode.prefix + "§cNo permission for //cover");
         }
         return true;
     }

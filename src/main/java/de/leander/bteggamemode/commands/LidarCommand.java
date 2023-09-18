@@ -7,6 +7,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionOperationException;
 
+import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -33,14 +34,14 @@ public class LidarCommand implements CommandExecutor {
                     region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
                 } catch (NullPointerException | IncompleteRegionException ex) {
                     ex.printStackTrace();
-                    player.sendMessage("§b§lBTEG §7» §cPlease select a WorldEdit selection!");
+                    player.sendMessage(BTEGGamemode.prefix + "§cPlease select a WorldEdit selection!");
                     return true;
                 }
                 //CompletableFuture.runAsync(() -> {
                 main(player, region, args);
                // });
             }else{
-                player.sendMessage("§b§lBTEG §7» §cNo permission for /lidar");
+                player.sendMessage(BTEGGamemode.prefix + "§cNo permission for /lidar");
             }
         }
         return true;
@@ -60,12 +61,12 @@ public class LidarCommand implements CommandExecutor {
                             if (region.contains((BlockVector3.at(i, world.getHighestBlockYAt(i, k), k)))) {
                                 Block block = world.getBlockAt(i, world.getHighestBlockYAt(i, k) - 1, k);
                                 blocks.add(new de.leander.bteggamemode.util.Block(block.getX(), block.getZ(), block.getBlockData().getMaterial()));
-                                player.sendMessage("§b§lBTEG §7» §7" + block.getType() + " saved");
+                                player.sendMessage(BTEGGamemode.prefix + "" + block.getType() + " saved");
                             }
                         }
                         //  }
                     }
-                    player.sendMessage("§b§lBTEG §7» §7§lSaved surface blocks");
+                    player.sendMessage(BTEGGamemode.prefix + "§lSaved surface blocks");
                 }
             }
 
@@ -75,7 +76,7 @@ public class LidarCommand implements CommandExecutor {
             region.getWorld().regenerate(region,editSession);
             editSession.flushQueue();
             localSession.remember(editSession);
-            player.sendMessage("§b§lBTEG §7» §7§lRegion regenerated");
+            player.sendMessage(BTEGGamemode.prefix + "§lRegion regenerated");
             for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                 for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
                     for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
@@ -118,7 +119,7 @@ public class LidarCommand implements CommandExecutor {
                     }
                 }
             }
-            player.sendMessage("§b§lBTEG §7» §7§lRegion cleaned");
+            player.sendMessage(BTEGGamemode.prefix + "§lRegion cleaned");
             if(args.length>0) {
                 if (args[0].equalsIgnoreCase("save")) {
                     for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
@@ -128,21 +129,21 @@ public class LidarCommand implements CommandExecutor {
                                 for (de.leander.bteggamemode.util.Block savedBlock : blocks) {
                                     if (savedBlock.getX() == surfaceBlock.getLocation().getBlockX() && savedBlock.getZ() == surfaceBlock.getLocation().getBlockZ()) {
                                         surfaceBlock.setType(savedBlock.getMat());
-                                        player.sendMessage("§b§lBTEG §7» §7" + savedBlock.getMat() + " pasted");
+                                        player.sendMessage(BTEGGamemode.prefix + "" + savedBlock.getMat() + " pasted");
                                     }
                                 }
                             }
                         }
 
                     }
-                    player.sendMessage("§b§lBTEG §7» §7§lSuccessfully regenerated region and replaced surface blocks");
+                    player.sendMessage(BTEGGamemode.prefix + "§lSuccessfully regenerated region and replaced surface blocks");
                 }
             }else{
-                player.sendMessage("§b§lBTEG §7» §7§lSuccessfully regenerated and cleaned region");
+                player.sendMessage(BTEGGamemode.prefix + "§lSuccessfully regenerated and cleaned region");
             }
 
         } catch (RegionOperationException e) {
-            player.sendMessage("§b§lBTEG §7» §c§lAn error occurred.");
+            player.sendMessage(BTEGGamemode.prefix + "§c§lAn error occurred.");
             e.printStackTrace();
         }
     }

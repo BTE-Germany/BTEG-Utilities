@@ -82,6 +82,10 @@
 
     <repositories>
         <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        <repository>
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
@@ -131,7 +135,11 @@
             <artifactId>FastAsyncWorldEdit-Core</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.SmylerMC</groupId>
+            <artifactId>terraminusminus</artifactId>
+            <version>feature~bukkit-5907790da3-1</version>
+        </dependency>
         <dependency>
             <groupId>com.fastasyncworldedit</groupId>
             <artifactId>FastAsyncWorldEdit-Bukkit</artifactId>

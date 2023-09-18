@@ -26,29 +26,29 @@ public class Speed implements CommandExecutor, Listener {
         if (cmd.getName().equalsIgnoreCase("speed")) {
             if (player.hasPermission("bteg.speed")) {
                 if (args.length == 0 || args.length > 1) {
-                    player.sendMessage("§b§lBTEG §7» §7Usage: /speed <0-5>");
+                    player.sendMessage(BTEGGamemode.prefix + "Usage: /speed <0-5>");
                 } else if (args.length == 1) {
                     String speed = args[0];
                     if (speed.equals("n") || speed.equals("normal")) {
                         player.setWalkSpeed(0.2F);
                         player.setFlySpeed(0.1F);
-                        player.sendMessage("§b§lBTEG §7» §7New speed: Normal");
+                        player.sendMessage(BTEGGamemode.prefix + "New speed: Normal");
                         return true;
                     } else if (speed.contains(",") || speed.contains(".") || speed.matches("1") || speed.matches("2") || speed.matches("3") || speed.matches("4") || speed.matches("5")) {
 
 
                         Float newSpeed = Float.parseFloat(speed.replace(",", "."));
                         if (newSpeed < 0 || newSpeed > 5) {
-                            player.sendMessage("§b§lBTEG §7» §7Usage: /speed <0-5>");
+                            player.sendMessage(BTEGGamemode.prefix + "Usage: /speed <0-5>");
                             return true;
                         }
 
                         player.setWalkSpeed(newSpeed / 5);
                         player.setFlySpeed(newSpeed / 10);
-                        player.sendMessage("§b§lBTEG §7» §7New speed: " + newSpeed + "");
+                        player.sendMessage(BTEGGamemode.prefix + "New speed: " + newSpeed + "");
 
                     } else {
-                        player.sendMessage("§b§lBTEG §7» §7Usage: /speed <0-5>");
+                        player.sendMessage(BTEGGamemode.prefix + "Usage: /speed <0-5>");
                         return true;
                     }
 

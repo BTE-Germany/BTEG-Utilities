@@ -9,6 +9,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BTEGGamemode extends JavaPlugin {
 
+    public static final String prefix = "ᾠ§7 "; // "§b§lBTEG §7» §7"
+
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(new SetGamemode(), this);
@@ -22,6 +24,7 @@ public final class BTEGGamemode extends JavaPlugin {
         getCommand("speed").setExecutor(new Speed(this));
         getCommand("cleanup").setExecutor(new CleanUpCommand());
         getCommand("connect").setExecutor(new ConnectCommand());
+        getCommand("regionfile").setExecutor(new RegionFileCommand());
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         getServer().getConsoleSender().sendMessage(ChatColor.BLUE + "[BTEG Gamemode]: Plugin enabled!");
     }
