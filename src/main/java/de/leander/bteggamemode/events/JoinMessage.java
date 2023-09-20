@@ -27,7 +27,7 @@ public class JoinMessage implements Listener {
 
         if (player.hasPermission("bteg.builder")) {
             player.setGameMode(GameMode.CREATIVE);
-            player.sendMessage(BTEGGamemode.prefix + "Gamemode set to creative!"+player.getGameMode().name());
+            player.sendMessage(BTEGGamemode.prefix + "Gamemode set to creative!");
         }
         else{
             Component message = Component.text(BTEGGamemode.prefix + "Gamemode set to §9spectator§7! As a \uE363 can only load already generated chunks!");
