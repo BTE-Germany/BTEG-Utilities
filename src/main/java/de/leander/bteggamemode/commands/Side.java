@@ -17,6 +17,7 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.session.SessionOwner;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.TabUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -25,13 +26,19 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class Side implements CommandExecutor {
+import static java.util.Collections.emptyList;
+
+public class Side implements TabExecutor {
 
     static World world1;
     private static Plugin plugin;
@@ -360,4 +367,19 @@ public class Side implements CommandExecutor {
     }
 
 
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (!sender.hasPermission("bteg.builder")) {
+            return emptyList();
+        }
+        // First argument: target
+        if (args.length == 1) {
+            return TabUtil.getMaterialBlocks(args[0]);
+        }
+        if (args.length == 2) {
+            return TabUtil.getMaterialBlocks(args[1]);
+        }
+
+        return emptyList();
+    }
 }

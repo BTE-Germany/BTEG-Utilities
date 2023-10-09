@@ -4,14 +4,18 @@ import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class Speed implements CommandExecutor, Listener {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class Speed implements TabExecutor {
 
     private static Plugin plugin;
 
@@ -62,5 +66,21 @@ public class Speed implements CommandExecutor, Listener {
     }
 
 
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (sender.hasPermission("bteg.speed")) {
+            return Collections.emptyList();
+        }
+        if (args.length == 1) {
+            List<String> list = new ArrayList<>();
+            list.add("1");
+            list.add("2");
+            list.add("3");
+            list.add("4");
+            list.add("5");
+            return list;
+        }
 
+        return Collections.emptyList();
+    }
 }

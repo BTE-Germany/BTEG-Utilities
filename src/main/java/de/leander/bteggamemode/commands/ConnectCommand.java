@@ -18,6 +18,7 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.block.*;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.TabUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -25,13 +26,23 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.google.common.io.Files.map;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 
-public class ConnectCommand implements CommandExecutor {
+public class ConnectCommand implements TabExecutor {
 
 
     static World world1;
@@ -199,5 +210,18 @@ public class ConnectCommand implements CommandExecutor {
         } catch (WorldEditException exception) {
             exception.printStackTrace();
         }
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (!sender.hasPermission("bteg.builder")) {
+            return emptyList();
+        }
+        // First argument: target
+        if (args.length == 1) {
+                return TabUtil.getMaterialBlocks(args[0]);
+        }
+
+        return emptyList();
     }
 }
