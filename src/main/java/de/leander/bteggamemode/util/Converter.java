@@ -1,11 +1,9 @@
 package de.leander.bteggamemode.util;
 
-import net.buildtheearth.terraminusminus.generator.EarthGeneratorSettings;
-import net.buildtheearth.terraminusminus.projection.OutOfProjectionBoundsException;
 
 public class Converter {
 
-    private static final EarthGeneratorSettings bteGeneratorSettings = EarthGeneratorSettings.parse(EarthGeneratorSettings.BTE_DEFAULT_SETTINGS);
+   // private static final EarthGeneratorSettings bteGeneratorSettings = EarthGeneratorSettings.parse(EarthGeneratorSettings.BTE_DEFAULT_SETTINGS);
 
     public static double[] regionFileToMcCoords(String fileName) {
         int regionX;
@@ -38,7 +36,7 @@ public class Converter {
         int regionZ = chunkZ >> 5;
         return isVanilla ? "r."+regionX+"."+regionZ+".mca" : (regionX*2)+"."+"0"+"."+(regionZ*2)+".3dr\n"+regionX+"."+regionZ+".2dr";
     }
-
+/*
     public static double[] fromGeo(double[] coordinates) throws OutOfProjectionBoundsException {
         return bteGeneratorSettings.projection().fromGeo(coordinates[0], coordinates[1]);
     }
@@ -47,5 +45,7 @@ public class Converter {
         double[] coords = bteGeneratorSettings.projection().toGeo(mccoordinates[0], mccoordinates[1]);
         return new double[]{coords[1],coords[0]};
     }
+
+ */
 
 }
