@@ -141,9 +141,11 @@ public class ConnectCommand implements CommandExecutor {
             BukkitPlayer actor = BukkitAdapter.adapt(player);
             SessionManager manager = WorldEdit.getInstance().getSessionManager();
             LocalSession localSession = manager.get(actor);
-            EditSession editSession = localSession.createEditSession(actor);
+
+
 
             for(int i = 0; points.size()>i;i++){
+                EditSession editSession = localSession.createEditSession(actor);
                 if(i == points.size()-1){
                     BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(),y,points.get(i).getBlockZ());
                     BlockVector3 vector1 = BlockVector3.at(points.get(i+1-points.size()).getBlockX(),y,points.get(i+1-points.size()).getBlockZ());
@@ -155,6 +157,7 @@ public class ConnectCommand implements CommandExecutor {
                     editSession.drawLine(pat,vector, vector1,0,true);
                     localSession.remember(editSession);
                 }
+                editSession.close();
             }
             if(plot){
                 player.chat("//re !22 82");
