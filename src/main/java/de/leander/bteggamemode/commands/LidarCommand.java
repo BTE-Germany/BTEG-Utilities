@@ -129,7 +129,7 @@ public class LidarCommand implements CommandExecutor {
                                 for (de.leander.bteggamemode.util.Block savedBlock : blocks) {
                                     if (savedBlock.getX() == surfaceBlock.getLocation().getBlockX() && savedBlock.getZ() == surfaceBlock.getLocation().getBlockZ()) {
                                         surfaceBlock.setType(savedBlock.getMat());
-                                        player.sendMessage(BTEGGamemode.prefix + "" + savedBlock.getMat() + " pasted");
+                                        //player.sendMessage(BTEGGamemode.prefix + "" + savedBlock.getMat() + " pasted");
                                     }
                                 }
                             }
