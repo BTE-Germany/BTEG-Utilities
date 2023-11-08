@@ -155,7 +155,7 @@ public class Terraform implements CommandExecutor {
                                     if (block.getType().equals(Material.GRAY_CONCRETE)) {
                                         world1.getBlockAt(i, z, k).setType(Material.GRAY_CONCRETE);
                                     }
-                                    if (block.getType().equals(Material.BRICK)) {
+                                    if (block.getType().equals(Material.BRICKS)) {
                                         world1.getBlockAt(i, z, k).setType(Material.BRICKS);
                                     }
                                 }
