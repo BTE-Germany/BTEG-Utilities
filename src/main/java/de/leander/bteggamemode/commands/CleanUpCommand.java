@@ -13,7 +13,7 @@ public class CleanUpCommand implements CommandExecutor {
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("cleanup")||command.getName().equalsIgnoreCase("/cleanup")) {
             if (player.hasPermission("bteg.builder")) {
-                player.chat("//re 4,8,9,10,11,12,13,17,18,31,37,38,39,40,82,86,106,175 0");
+                player.chat("//re 18,85,oak_wood,azalea_leaves,birch_leaves,birch_fence,spruce_fence,spruce_leaves,oak_log,spruce_fence_gate,stripped_spruce_log 0");
             }else{
                 player.sendMessage(BTEGGamemode.prefix + "§cNo permission for //cleanup");
             }
