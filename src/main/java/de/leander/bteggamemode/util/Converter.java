@@ -1,6 +1,12 @@
 package de.leander.bteggamemode.util;
 
 
+import com.sk89q.worldedit.world.block.BlockState;
+import com.sk89q.worldedit.world.block.BlockStateHolder;
+import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
+import com.sk89q.worldedit.world.registry.LegacyMapper;
+
 public class Converter {
 
    // private static final EarthGeneratorSettings bteGeneratorSettings = EarthGeneratorSettings.parse(EarthGeneratorSettings.BTE_DEFAULT_SETTINGS);
@@ -47,5 +53,29 @@ public class Converter {
     }
 
  */
+
+    public static boolean isLegacyID(String input) {
+        char firstChar = input.charAt(0);
+        if (firstChar >= '0' && firstChar <= '9') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static BlockType getBlockType(String pattern){
+        BlockType blockType = null;
+        if(Converter.isLegacyID(pattern)) {
+            try {
+                BlockStateHolder<BlockState> block = LegacyMapper.getInstance().getBlockFromLegacy(pattern);
+                if (block != null) {
+                    blockType = block.getBlockType();
+                }
+            } catch (NumberFormatException | IndexOutOfBoundsException ignored) {}
+        }else {
+            blockType = BlockTypes.get(pattern.toLowerCase());
+        }
+        return blockType;
+    }
 
 }

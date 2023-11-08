@@ -16,7 +16,9 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.session.SessionOwner;
+import com.sk89q.worldedit.world.block.BlockType;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -48,8 +50,8 @@ public class Side implements TabExecutor {
     Clipboard clipboard;
 
     static ClipboardHolder clipboardHolder;
-    static String preBlock;
-    static String postBlock;
+    static BlockType preBlock;
+    static BlockType postBlock;
     static String direction;
     static boolean ignoreSameBlock;
     static ArrayList<String> masks;
@@ -91,9 +93,9 @@ public class Side implements TabExecutor {
                 }
                 else if(args.length >= 3){
 
-                    preBlock = args[0].toUpperCase();
+                    preBlock = Converter.getBlockType(args[0].toUpperCase());
 
-                    postBlock = args[1].toUpperCase();
+                    postBlock = Converter.getBlockType(args[1].toUpperCase());
 
                     direction = args[2];
                     if(args.length>=4) {
@@ -193,54 +195,56 @@ public class Side implements TabExecutor {
                     for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
                         if (region.contains(BlockVector3.at(i, j, k))) {
                             Block block = world1.getBlockAt(i, j, k);
-                            if (block.getType().toString().equalsIgnoreCase(preBlock)) {
+                            if (block.getType().toString().equalsIgnoreCase(BukkitAdapter.adapt(preBlock).toString())) {
+                                Material materialPreBlock = BukkitAdapter.adapt(preBlock);
+                                Material materialPostBlock = BukkitAdapter.adapt(postBlock);
                                 if(masks==null) {
                                     switch (direction) {
                                         case "n": {
                                             if(!ignoreSameBlock) {
-                                                if (!world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(preBlock)) {
-                                                    world1.getBlockAt(i, j, k - 1).setType(Material.getMaterial(postBlock));
+                                                if (!world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                                    world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
                                                     blocks++;
                                                 }
                                             }else{
-                                                    world1.getBlockAt(i, j, k - 1).setType(Material.getMaterial(postBlock));
+                                                    world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
                                                     blocks++;
                                             }
                                             break;
                                         }
                                         case "e": {
                                             if(!ignoreSameBlock) {
-                                                if (!world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(preBlock)) {
-                                                    world1.getBlockAt(i + 1, j, k).setType(Material.getMaterial(postBlock));
+                                                if (!world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                                    world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
 
                                                     blocks++;
                                                 }
                                             }else{
-                                                world1.getBlockAt(i + 1, j, k).setType(Material.getMaterial(postBlock));
+                                                world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
                                                 blocks++;
                                             }
                                             break;
                                         }
                                         case "s": {
                                             if(!ignoreSameBlock) {
-                                                if (!world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(preBlock)) {
-                                                    world1.getBlockAt(i, j, k + 1).setType(Material.getMaterial(postBlock));
+                                                if (!world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                                    world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
                                                     blocks++;
                                                 }
                                             }else{
-                                                world1.getBlockAt(i, j, k + 1).setType(Material.getMaterial(postBlock));
+                                                world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
                                                 blocks++;
                                             }
                                             break;
                                         }
                                         case "w": {
                                             if(!ignoreSameBlock) {
-                                                if (!world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(preBlock)) {
-                                                    world1.getBlockAt(i - 1, j, k).setType(Material.getMaterial(postBlock));
+                                                if (!world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                                    world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
                                                     blocks++;
                                                 }
                                             }else{
-                                                world1.getBlockAt(i - 1, j, k).setType(Material.getMaterial(postBlock));
+                                                world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
                                                 blocks++;
                                             }
                                             break;
@@ -254,13 +258,13 @@ public class Side implements TabExecutor {
                                             case "n": {
 
                                                 if (!ignoreSameBlock) {
-                                                    if (!world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(preBlock) && world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i, j, k - 1).setType(Material.getMaterial(postBlock));
+                                                    if (!world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(maske)) {
+                                                        world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 } else {
                                                     if (world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i, j, k - 1).setType(Material.getMaterial(postBlock));
+                                                        world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 }
@@ -268,13 +272,13 @@ public class Side implements TabExecutor {
                                             }
                                             case "e": {
                                                 if (!ignoreSameBlock) {
-                                                    if (!world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(preBlock) && world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i + 1, j, k).setType(Material.getMaterial(postBlock));
+                                                    if (!world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(maske)) {
+                                                        world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 } else {
                                                     if (world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i + 1, j, k).setType(Material.getMaterial(postBlock));
+                                                        world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 }
@@ -282,13 +286,13 @@ public class Side implements TabExecutor {
                                             }
                                             case "s": {
                                                 if (!ignoreSameBlock) {
-                                                    if (!world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(preBlock) && world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i, j, k + 1).setType(Material.getMaterial(postBlock));
+                                                    if (!world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(maske)) {
+                                                        world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 } else {
                                                     if (world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i, j, k + 1).setType(Material.getMaterial(postBlock));
+                                                        world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 }
@@ -296,13 +300,13 @@ public class Side implements TabExecutor {
                                             }
                                             case "w": {
                                                 if (!ignoreSameBlock) {
-                                                    if (!world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(preBlock) && world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i - 1, j, k).setType(Material.getMaterial(postBlock));
+                                                    if (!world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(maske)) {
+                                                        world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 } else {
                                                     if (world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(maske)) {
-                                                        world1.getBlockAt(i - 1, j, k).setType(Material.getMaterial(postBlock));
+                                                        world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
                                                         blocks++;
                                                     }
                                                 }
@@ -351,7 +355,10 @@ public class Side implements TabExecutor {
     private void load(Player player) {
         try {
             //
-            EditSession editSession = new EditSessionFactory().getEditSession(new BukkitWorld(player.getWorld()), -1);
+            BukkitPlayer actor = BukkitAdapter.adapt(player);
+            SessionManager manager = WorldEdit.getInstance().getSessionManager();
+            LocalSession localSession = manager.get(actor);
+            EditSession editSession = localSession.createEditSession(actor);
 
             editSession.enableQueue();
 
@@ -373,11 +380,8 @@ public class Side implements TabExecutor {
             return emptyList();
         }
         // First argument: target
-        if (args.length == 1) {
-            return TabUtil.getMaterialBlocks(args[0]);
-        }
-        if (args.length == 2) {
-            return TabUtil.getMaterialBlocks(args[1]);
+        if (args.length == 1 || args.length == 2) {
+            return TabUtil.getMaterialBlocks(args[args.length-1]);
         }
 
         return emptyList();

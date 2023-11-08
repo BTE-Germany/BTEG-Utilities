@@ -17,7 +17,9 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.block.*;
+import com.sk89q.worldedit.world.registry.LegacyMapper;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -138,11 +140,11 @@ public class ConnectCommand implements TabExecutor {
             int y = polyRegion.getMaximumPoint().getBlockY();
             WorldEditPlugin worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
 
-            BlockType blockType;
+            BlockType blockType = null;
             if(plot){
                 blockType = BlockTypes.get("lapis_block");
             }else {
-                blockType = BlockTypes.get(pattern.toLowerCase());
+                blockType = Converter.getBlockType(pattern);
             }
 
             BlockState blockState = blockType.getDefaultState();
@@ -219,7 +221,7 @@ public class ConnectCommand implements TabExecutor {
         }
         // First argument: target
         if (args.length == 1) {
-                return TabUtil.getMaterialBlocks(args[0]);
+                return TabUtil.getMaterialBlocks(args[args.length-1]);
         }
 
         return emptyList();

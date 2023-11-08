@@ -34,4 +34,8 @@ public final class BTEGGamemode extends JavaPlugin {
     }
 
 
+    public static BTEGGamemode getPlugin() {
+        return getPlugin(BTEGGamemode.class);
+    }
+
 }
