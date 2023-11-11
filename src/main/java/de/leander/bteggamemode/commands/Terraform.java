@@ -14,6 +14,7 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.WorldEditUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -35,10 +36,6 @@ public class Terraform implements CommandExecutor {
     private static Plugin plugin;
     private static boolean runterterraformen;
     private static Polygonal2DRegion polyRegion;
-    private static CuboidRegion cuboidRegion;
-    static Clipboard clipboard;
-    static ClipboardHolder clipboardHolder;
-
     static Clipboard backup;
     static BlockVector3 koordinaten;
 
@@ -53,7 +50,7 @@ public class Terraform implements CommandExecutor {
         if (command.getName().equalsIgnoreCase("terraform")) {
             if (player.hasPermission("bteg.builder")) {
                 if (args[0].equals("undo")) {
-                    load(player);
+                    WorldEditUtil.pasteBackup(player, backup, koordinaten);
                     return true;
                 } else {
                     height = (Integer.parseInt(args[0]) - 1);
@@ -123,7 +120,7 @@ public class Terraform implements CommandExecutor {
             player.sendMessage(BTEGGamemode.prefix + "Terraforming started. Please wait a short moment!");
           //  player.performCommand("/copy"); // Am anfang benutzt aber speichern des clipboards funktioniert jetzt nur mit der worldedit api
             //WorldEdit CLipboard backup
-            backup(polyRegion, player);
+            WorldEditUtil.saveBackup(polyRegion, player);
             koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
            // backup.setOrigin(koordinaten);
             //
@@ -204,34 +201,4 @@ public class Terraform implements CommandExecutor {
         }
     }
 
-    private static void backup(Region pRegion,Player player){
-        backup = new BlockArrayClipboard(pRegion);
-        BukkitPlayer actor = BukkitAdapter.adapt(player);
-        SessionManager manager = WorldEdit.getInstance().getSessionManager();
-        LocalSession localSession = manager.get(actor);
-        ClipboardHolder selection = new ClipboardHolder(backup);
-        EditSession editSession = localSession.createEditSession(actor);
-        BlockVector3 min = selection.getClipboard().getMinimumPoint();
-        BlockVector3 max = selection.getClipboard().getMaximumPoint();
-        editSession.enableQueue();
-        /*
-        clipboard = new Clipboard(max.subtract(min).add(BlockVector3.at(1, 1, 1)), min);
-        clipboard.copy(editSession);
-         */
-        localSession.remember(editSession);
-        editSession.flushQueue();
-    }
-
-    private void load(Player player) {
-        try {
-            //
-            EditSession editSession = new EditSessionFactory().getEditSession(new BukkitWorld(player.getWorld()), -1);
-            editSession.enableQueue();
-            clipboard.paste(editSession, koordinaten,false,null);
-            editSession.flushQueue();
-            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
-            } catch (WorldEditException exception) {
-                exception.printStackTrace();
-            }
-    }
 }

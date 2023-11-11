@@ -21,6 +21,7 @@ import com.sk89q.worldedit.world.registry.LegacyMapper;
 import de.leander.bteggamemode.BTEGGamemode;
 import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
+import de.leander.bteggamemode.util.WorldEditUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -63,7 +64,7 @@ public class ConnectCommand implements TabExecutor {
             if (player.hasPermission("bteg.builder")) {
                 if (args.length == 1) {
                     if (args[0].equals("undo")) {
-                        load(player);
+                        WorldEditUtil.pasteBackup(player, backup, koordinaten);
                         return true;
                     } else {
                         try {
@@ -133,12 +134,11 @@ public class ConnectCommand implements TabExecutor {
             world1 = player.getWorld();
 
             //WorldEdit CLipboard backup
-            backup(polyRegion, player);
+            backup = WorldEditUtil.saveBackup(polyRegion, player);
             koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
 
             List<BlockVector2> points = polyRegion.getPoints();
             int y = polyRegion.getMaximumPoint().getBlockY();
-            WorldEditPlugin worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
 
             BlockType blockType = null;
             if(plot){
@@ -154,8 +154,6 @@ public class ConnectCommand implements TabExecutor {
             BukkitPlayer actor = BukkitAdapter.adapt(player);
             SessionManager manager = WorldEdit.getInstance().getSessionManager();
             LocalSession localSession = manager.get(actor);
-
-
 
             for(int i = 0; points.size()>i;i++){
                 EditSession editSession = localSession.createEditSession(actor);
@@ -180,38 +178,6 @@ public class ConnectCommand implements TabExecutor {
             }
 
 
-    }
-
-
-    private static void backup(Region pRegion,Player player){
-        backup = new BlockArrayClipboard(pRegion);
-        BukkitPlayer actor = BukkitAdapter.adapt(player);
-        SessionManager manager = WorldEdit.getInstance().getSessionManager();
-        LocalSession localSession = manager.get(actor);
-        ClipboardHolder selection = new ClipboardHolder(backup);
-        EditSession editSession = localSession.createEditSession(actor);
-        BlockVector3 min = selection.getClipboard().getMinimumPoint();
-        BlockVector3 max = selection.getClipboard().getMaximumPoint();
-        editSession.enableQueue();
-        /*
-        clipboard = new Clipboard(max.subtract(min).add(BlockVector3.at(1, 1, 1)), min);
-        clipboard.copy(editSession);
-         */
-        localSession.remember(editSession);
-        editSession.flushQueue();
-    }
-
-    private void load(Player player) {
-        try {
-            //
-            EditSession editSession = new EditSessionFactory().getEditSession(new BukkitWorld(player.getWorld()), -1);
-            editSession.enableQueue();
-            clipboard.paste(editSession, koordinaten,false,null);
-            editSession.flushQueue();
-            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
-        } catch (WorldEditException exception) {
-            exception.printStackTrace();
-        }
     }
 
     @Override

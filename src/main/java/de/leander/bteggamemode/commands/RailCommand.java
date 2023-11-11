@@ -24,6 +24,7 @@ import com.sk89q.worldedit.world.block.BlockType;
 import de.leander.bteggamemode.BTEGGamemode;
 import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
+import de.leander.bteggamemode.util.WorldEditUtil;
 import org.bukkit.Bukkit;
 
 import org.bukkit.Material;
@@ -60,7 +61,7 @@ public class RailCommand implements TabExecutor {
             if (player.hasPermission("bteg.builder")) {
                 if (args.length > 0) {
                     if (args[0].equals("undo")) {
-                        load(player);
+                        WorldEditUtil.pasteBackup(player, backup, koordinaten);
                         return true;
                     }
 
@@ -74,7 +75,7 @@ public class RailCommand implements TabExecutor {
                         return true;
                     }
                     koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
-                    backup(region,player);
+                    backup = WorldEditUtil.saveBackup(region,player);
                     ArrayList<de.leander.bteggamemode.util.Block> blocks = null;
                     boolean inGround = false;
                     if(args.length==5) {
@@ -257,27 +258,6 @@ public class RailCommand implements TabExecutor {
             return "EAST";
         }
         return "NORTH";
-    }
-
-    private static void backup(Region pRegion,Player player){
-        backup = new BlockArrayClipboard(pRegion);
-
-        ForwardExtentCopy forwardExtentCopy = new ForwardExtentCopy(
-                BukkitAdapter.adapt(player.getWorld()), pRegion, backup, pRegion.getMinimumPoint()
-        );
-
-        Operations.complete(forwardExtentCopy);
-    }
-
-    private void load(Player player) {
-        try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(player.getWorld()))) {
-            Operation operation = new ClipboardHolder(backup)
-                    .createPaste(editSession)
-                    .to(koordinaten)
-                    .ignoreAirBlocks(true)
-                    .build();
-            Operations.complete(operation);
-        }
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.sk89q.worldedit.world.block.BlockType;
 import de.leander.bteggamemode.BTEGGamemode;
 import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
+import de.leander.bteggamemode.util.WorldEditUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -82,7 +83,7 @@ public class Side implements TabExecutor {
                 }
                 else if(args.length == 1){
                     if (args[0].equals("undo")) {
-                        load(player);
+                        WorldEditUtil.pasteBackup(player, backup, koordinaten);
                         return true;
                     }else{
                         player.sendMessage(BTEGGamemode.prefix + "Usage:");
@@ -182,9 +183,9 @@ public class Side implements TabExecutor {
             world1 = player.getWorld();
 
         if (region instanceof Polygonal2DRegion) {
-            backup(polyRegion, player);
+            WorldEditUtil.saveBackup(polyRegion, player);
         }else if(region instanceof CuboidRegion){
-            backup(cuboidRegion, player);
+            WorldEditUtil.saveBackup(cuboidRegion, player);
         }
 
             koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
@@ -331,48 +332,7 @@ public class Side implements TabExecutor {
         player.sendMessage(BTEGGamemode.prefix + "Successfully replaced §6§l"+blocks+" §r§7blocks sideways!");
         ignoreSameBlock = false;
         masks = null;
-        return;
     }
-
-    private static void backup(Region pRegion,Player player){
-        backup = new BlockArrayClipboard(pRegion);
-        BukkitPlayer actor = BukkitAdapter.adapt(player);
-        SessionManager manager = WorldEdit.getInstance().getSessionManager();
-        LocalSession localSession = manager.get(actor);
-        ClipboardHolder selection = new ClipboardHolder(backup);
-        EditSession editSession = localSession.createEditSession(actor);
-        BlockVector3 min = selection.getClipboard().getMinimumPoint();
-        BlockVector3 max = selection.getClipboard().getMaximumPoint();
-        editSession.enableQueue();
-        /*
-        clipboard = new Clipboard(max.subtract(min).add(BlockVector3.at(1, 1, 1)), min);
-        clipboard.copy(editSession);
-         */
-        localSession.remember(editSession);
-        editSession.flushQueue();
-    }
-
-    private void load(Player player) {
-        try {
-            //
-            BukkitPlayer actor = BukkitAdapter.adapt(player);
-            SessionManager manager = WorldEdit.getInstance().getSessionManager();
-            LocalSession localSession = manager.get(actor);
-            EditSession editSession = localSession.createEditSession(actor);
-
-            editSession.enableQueue();
-
-            clipboard.paste(editSession, koordinaten,false,null);
-            editSession.flushQueue();
-
-            player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
-
-        } catch (WorldEditException exception) {
-            exception.printStackTrace();
-        }
-
-    }
-
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
