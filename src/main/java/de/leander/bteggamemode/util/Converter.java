@@ -8,7 +8,6 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldedit.world.registry.LegacyMapper;
 import org.bukkit.entity.Player;
 
-import javax.annotation.Nullable;
 
 public class Converter {
 
@@ -62,7 +61,6 @@ public class Converter {
         return firstChar >= '0' && firstChar <= '9';
     }
 
-    //TODO: include type/facing
     /**
      * If there is a player it's recommended to use {@link #getBlockType(String pattern, Player player)}
      */
