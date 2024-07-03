@@ -4,10 +4,10 @@ import org.bukkit.Material;
 
 public class Block {
 
-    int x;
-    int y;
-    int z;
-    Material mat;
+    private int x;
+    private int y;
+    private int z;
+    private Material mat;
 
 
     public Block(int x, int z, Material mat) {

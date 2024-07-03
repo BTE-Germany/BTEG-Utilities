@@ -9,36 +9,40 @@ import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.math.Vector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import de.leander.bteggamemode.BTEGGamemode;
 import org.bukkit.entity.Player;
 
-public class WorldEditUtil {
+public class CommandWithBackup {
 
-    public static Clipboard saveBackup(Region pRegion, Player player){
-        Clipboard backup = new BlockArrayClipboard(pRegion);
+    private Player player;
+    private Clipboard backup;
+    private BlockVector3 coordinates;
+
+    public synchronized void saveBackup(Player player, Region region) {
+        this.player = player;
+        this.coordinates = region.getMinimumPoint();
+
+        this.backup = new BlockArrayClipboard(region);
 
         ForwardExtentCopy forwardExtentCopy = new ForwardExtentCopy(
-                BukkitAdapter.adapt(player.getWorld()), pRegion, backup, pRegion.getMinimumPoint()
+                BukkitAdapter.adapt(player.getWorld()), region, this.backup, region.getMinimumPoint()
         );
 
         Operations.complete(forwardExtentCopy);
-
-        return backup;
     }
 
-    public static void pasteBackup(Player player, Clipboard backup, BlockVector3 koordinaten) {
-        try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(player.getWorld()))) {
-            Operation operation = new ClipboardHolder(backup)
+    public synchronized void pasteBackup() {
+        try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(this.player.getWorld()))) {
+            Operation operation = new ClipboardHolder(this.backup)
                     .createPaste(editSession)
-                    .to(koordinaten)
-                    .ignoreAirBlocks(true)
+                    .to(this.coordinates)
+                    .ignoreAirBlocks(false)
                     .build();
             Operations.complete(operation);
         }
-        player.sendMessage(BTEGGamemode.prefix + "Undo succesful!");
+        this.player.sendMessage(BTEGGamemode.PREFIX + "Undo successful!");
     }
 
 }

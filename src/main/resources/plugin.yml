@@ -1,7 +1,7 @@
 name: BTEGGamemode
 version: ${project.version}
 main: de.leander.bteggamemode.BTEGGamemode
-authors: [ Leander ]
+authors: [ Leander, JaskerX ]
 description: This plugin sets users gamemode to spectator or visitor (checks for permission node) when a player joins a server.
 website: bte-germany.de
 api-version: 1.18
@@ -43,11 +43,11 @@ commands:
         - /cover
   rail:
     description: Builds rails
-    usage: /rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>
+    usage: /rail <Block-ID or undo> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>
     aliases:
       - /rail
   connect:
     description: Connects blocks
-    usage: /connect <Block-ID>
+    usage: /connect <Block-ID or undo>
     aliases:
       - /connect

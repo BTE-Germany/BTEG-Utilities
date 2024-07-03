@@ -12,52 +12,54 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.bukkit.util.BlockVector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public class LidarCommand implements TabExecutor {
+
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) { return true; }
-        Player player = (Player) sender;
-        if (command.getName().equalsIgnoreCase("lidar")||command.getName().equalsIgnoreCase("/lidar")) {
-            if (player.hasPermission("bteg.lidar")) {
-                Region region;
-                // Get WorldEdit selection of player
-                try {
-                    region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
-                } catch (NullPointerException | IncompleteRegionException ex) {
-                    ex.printStackTrace();
-                    player.sendMessage(BTEGGamemode.prefix + "§cPlease select a WorldEdit selection!");
-                    return true;
-                }
-                //CompletableFuture.runAsync(() -> {
-                main(player, region, args);
-               // });
-            }else{
-                player.sendMessage(BTEGGamemode.prefix + "§cNo permission for /lidar");
-            }
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        if (!(sender instanceof Player player) || !(command.getName().equalsIgnoreCase("lidar") || command.getName().equalsIgnoreCase("/lidar"))) {
+            return true;
         }
+        if (!player.hasPermission("bteg.lidar")) {
+            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for /lidar");
+            return true;
+        }
+
+        Region region;
+        // Get WorldEdit selection of player
+        try {
+            LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
+            if(localSession == null) {
+                return true;
+            }
+            region = localSession.getSelection(localSession.getSelectionWorld());
+        } catch (NullPointerException | IncompleteRegionException ex) {
+            ex.printStackTrace();
+            player.sendMessage(BTEGGamemode.PREFIX + "§cPlease select a WorldEdit selection!");
+            return true;
+        }
+        //CompletableFuture.runAsync(() -> {
+        this.lidar(player, region, args);
+       // });
+
         return true;
     }
 
-    private void main(Player player, Region region, String[] args){
+    private void lidar(Player player, Region region, String[] args) {
         try {
-            ArrayList<de.leander.bteggamemode.util.Block> blocks = new ArrayList<>();
+            List<de.leander.bteggamemode.util.Block> blocks = new ArrayList<>();
             World world = player.getWorld();
 
             region.expand(BlockVector3.UNIT_Y);
-            if(args.length>0) {
+            if (args.length > 0) {
                 if (args[0].equalsIgnoreCase("save")) {
                     for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                         //for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
@@ -65,22 +67,25 @@ public class LidarCommand implements TabExecutor {
                             if (region.contains((BlockVector3.at(i, world.getHighestBlockYAt(i, k), k)))) {
                                 Block block = world.getBlockAt(i, world.getHighestBlockYAt(i, k) - 1, k);
                                 blocks.add(new de.leander.bteggamemode.util.Block(block.getX(), block.getZ(), block.getBlockData().getMaterial()));
-                                player.sendMessage(BTEGGamemode.prefix + "" + block.getType() + " saved");
+                                player.sendMessage(BTEGGamemode.PREFIX + block.getType() + " saved");
                             }
                         }
                         //  }
                     }
-                    player.sendMessage(BTEGGamemode.prefix + "§lSaved surface blocks");
+                    player.sendMessage(BTEGGamemode.PREFIX + "§lSaved surface blocks");
                 }
             }
 
-            EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(region.getWorld(), -1);
+            EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(region.getWorld()).maxBlocks(-1).build();
             LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
+            if (localSession == null || region.getWorld() == null) {
+                return;
+            }
             editSession.enableQueue();
             region.getWorld().regenerate(region,editSession);
             editSession.flushQueue();
             localSession.remember(editSession);
-            player.sendMessage(BTEGGamemode.prefix + "§lRegion regenerated");
+            player.sendMessage(BTEGGamemode.PREFIX + "§lRegion regenerated");
             for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                 for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
                     for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
@@ -112,19 +117,18 @@ public class LidarCommand implements TabExecutor {
                             materials.add(Material.SUGAR_CANE);
                             materials.add(Material.ROSE_BUSH);
 
-                            for(Material material : materials){
-                                if(block.getBlockData().getMaterial().equals(material)) {
-                                    deleteBlock(block);
+                            for (Material material : materials){
+                                if (block.getBlockData().getMaterial().equals(material)) {
+                                    this.deleteBlock(block);
                                 }
                             }
-
 
                         }
                     }
                 }
             }
-            player.sendMessage(BTEGGamemode.prefix + "§lRegion cleaned");
-            if(args.length>0) {
+            player.sendMessage(BTEGGamemode.PREFIX + "§lRegion cleaned");
+            if (args.length > 0) {
                 if (args[0].equalsIgnoreCase("save")) {
                     for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
                         for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
@@ -140,14 +144,14 @@ public class LidarCommand implements TabExecutor {
                         }
 
                     }
-                    player.sendMessage(BTEGGamemode.prefix + "§lSuccessfully regenerated region and replaced surface blocks");
+                    player.sendMessage(BTEGGamemode.PREFIX + "§lSuccessfully regenerated region and replaced surface blocks");
                 }
-            }else{
-                player.sendMessage(BTEGGamemode.prefix + "§lSuccessfully regenerated and cleaned region");
+            } else {
+                player.sendMessage(BTEGGamemode.PREFIX + "§lSuccessfully regenerated and cleaned region");
             }
 
         } catch (RegionOperationException e) {
-            player.sendMessage(BTEGGamemode.prefix + "§c§lAn error occurred.");
+            player.sendMessage(BTEGGamemode.PREFIX + "§c§lAn error occurred.");
             e.printStackTrace();
         }
     }

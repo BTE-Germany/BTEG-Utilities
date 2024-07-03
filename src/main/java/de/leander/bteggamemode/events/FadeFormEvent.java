@@ -13,7 +13,8 @@ public class FadeFormEvent implements Listener {
         event.setCancelled(true);
     }
     @EventHandler
-    public void onIce(BlockFadeEvent event) {event.setCancelled(true);
+    public void onIce(BlockFadeEvent event) {
+        event.setCancelled(true);
     }
 
 }

@@ -2,10 +2,7 @@ package de.leander.bteggamemode.commands;
 
 import de.leander.bteggamemode.BTEGGamemode;
 import de.leander.bteggamemode.util.MessageUtil;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,18 +15,18 @@ public class RegionFileCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if(!(sender instanceof Player)) { return true; }
-        Player player = (Player) sender;
-        if(!player.hasPermission("bteg.regionfile")){
-            player.sendMessage(BTEGGamemode.prefix + "§cNo permission for /regionfile");
+        if (!(sender instanceof Player player)) {
             return true;
         }
-
+        if (!player.hasPermission("bteg.regionfile")){
+            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for /regionfile");
+            return true;
+        }
 
         int x = player.getLocation().getBlockX();
         int z = player.getLocation().getBlockZ();
         boolean isVanilla = true;
-        if(new File(player.getWorld().getWorldFolder().getAbsolutePath() + "region3d").exists() || (args.length == 1 && args[0].equalsIgnoreCase("cc"))) {
+        if (new File(player.getWorld().getWorldFolder().getAbsolutePath() + "region3d").exists() || (args.length == 1 && args[0].equalsIgnoreCase("cc"))) {
             isVanilla = false;
         }
 
@@ -40,16 +37,16 @@ public class RegionFileCommand implements CommandExecutor {
         int region3dZ = chunkZ >> 4;
         int regionZ = chunkZ >> 5;
 
-        if(isVanilla){
-            String regionFile = "r."+regionX+"."+regionZ+".mca";
+        if (isVanilla){
+            String regionFile = "r." + regionX + "." + regionZ + ".mca";
 
-            MessageUtil.sendHoverClickMessage(player, "Region file: §9" +regionFile, "§7Click to copy §9" + regionFile + " §7to clipboard", ClickEvent.copyToClipboard(regionFile));
-        }else{
-            String region3dFile = region3dX+"."+"0"+"."+region3dZ+".3dr";
-            String region2dFile = regionX+"."+regionZ+".2dr";
+            MessageUtil.sendHoverClickMessage(player, "Region file: §9" + regionFile, "§7Click to copy §9" + regionFile + " §7to clipboard", ClickEvent.copyToClipboard(regionFile));
+        } else {
+            String region3dFile = region3dX + "." + "0" + "." + region3dZ + ".3dr";
+            String region2dFile = regionX + "." + regionZ + ".2dr";
 
-            MessageUtil.sendHoverClickMessage(player,"Region3d file: §9" +region3dFile,"§7Click to copy §9" + region3dFile + " §7to clipboard",ClickEvent.copyToClipboard(region3dFile));
-            MessageUtil.sendHoverClickMessage(player, "Region2d file: §9" +region2dFile,"§7Click to copy §9" + region2dFile + " §7to clipboard",ClickEvent.copyToClipboard(region2dFile));
+            MessageUtil.sendHoverClickMessage(player,"Region3d file: §9" + region3dFile,"§7Click to copy §9" + region3dFile + " §7to clipboard", ClickEvent.copyToClipboard(region3dFile));
+            MessageUtil.sendHoverClickMessage(player, "Region2d file: §9" + region2dFile,"§7Click to copy §9" + region2dFile + " §7to clipboard", ClickEvent.copyToClipboard(region2dFile));
         }
 
         return true;

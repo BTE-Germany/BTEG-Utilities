@@ -1,263 +1,162 @@
 package de.leander.bteggamemode.commands;
 
+import com.destroystokyo.paper.MaterialSetTag;
 import com.sk89q.worldedit.*;
 
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.bukkit.BukkitPlayer;
-import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-
-import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionOperationException;
-import com.sk89q.worldedit.session.ClipboardHolder;
 
-import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.block.BlockType;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.CommandWithBackup;
 import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
-import de.leander.bteggamemode.util.WorldEditUtil;
-import org.bukkit.Bukkit;
 
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.emptyList;
 
 
-public class RailCommand implements TabExecutor {
-
-    static Clipboard backup;
-    static BlockVector3 koordinaten;
+public class RailCommand extends CommandWithBackup implements TabExecutor {
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) { return true; }
-        Player player = (Player) sender;
-        World world = player.getWorld();
-        if (command.getName().equalsIgnoreCase("rail")||command.getName().equalsIgnoreCase("/rail")) {
-            if (player.hasPermission("bteg.builder")) {
-                if (args.length > 0) {
-                    if (args[0].equals("undo")) {
-                        WorldEditUtil.pasteBackup(player, backup, koordinaten);
-                        return true;
-                    }
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        if (!(sender instanceof Player player) || !(command.getName().equalsIgnoreCase("rail") || command.getName().equalsIgnoreCase("/rail"))) {
+            return true;
+        }
+        if (!player.hasPermission("bteg.builder")) {
+            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for //rail");
+            return true;
+        }
+        if (args.length == 0) {
+            player.sendMessage(BTEGGamemode.PREFIX + "Usage:");
+            player.sendMessage(BTEGGamemode.PREFIX + "//rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
+            player.sendMessage(BTEGGamemode.PREFIX + "//rail <undo>");
+            return true;
+        }
 
-                    Region region;
-                    // Get WorldEdit selection of player
-                    try {
-                        region = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
-                    } catch (NullPointerException | IncompleteRegionException ex) {
-                        ex.printStackTrace();
-                        player.sendMessage(BTEGGamemode.prefix + "§cPlease select a WorldEdit selection!");
-                        return true;
-                    }
-                    koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
-                    backup = WorldEditUtil.saveBackup(region,player);
-                    ArrayList<de.leander.bteggamemode.util.Block> blocks = null;
-                    boolean inGround = false;
-                    if(args.length==5) {
-                        if(args[4].equalsIgnoreCase("y")) {
-                                inGround = true;
-                                blocks = new ArrayList<>();
-                                for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
-                                    //for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
-                                    for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
-                                        if (region.contains(BlockVector3.at(i, world.getHighestBlockYAt(i, k), k))) {
-                                            Block block = world.getBlockAt(i, world.getHighestBlockYAt(i, k) - 1, k);
-                                            blocks.add(new de.leander.bteggamemode.util.Block(block.getX(), block.getZ(), block.getType()));
-                                        }
-                                    }
-                                    //  }
-                                }
-                        }
-                    }
-                    String anvils = "145";
-                    if(getDirection(player).equalsIgnoreCase("east")||getDirection(player).equalsIgnoreCase("west")){
-                        player.chat("//side "+args[0]+" air n y");
-                        anvils = "anvil:1";
-                    }else if(getDirection(player).equalsIgnoreCase("north")||getDirection(player).equalsIgnoreCase("south")){
-                        player.chat("//side "+args[0]+" air e y");
-                        anvils = "anvil";
-                    }
+        if (args[0].equals("undo")) {
+            this.pasteBackup();
+            return true;
+        }
 
+        BlockType middleBlockType = Converter.getBlockType(args[0], player);
+        String railwaySleepersMaterial = args.length >= 2 ? args[1] : "andesite_wall";
+        boolean overheadLine = args.length >= 3 && args[2].equalsIgnoreCase("y");
+        boolean inGround = args.length >= 4 && args[3].equalsIgnoreCase("y");
 
+        Region region;
+        // Get WorldEdit selection of player
+        try {
+            LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
+            if(localSession == null) {
+                return true;
+            }
+            region = localSession.getSelection(localSession.getSelectionWorld());
 
+            if (overheadLine) {
+                region.expand(BlockVector3.at(0, 8, 0));
+            }
+        } catch (NullPointerException | IncompleteRegionException | RegionOperationException ex) {
+            ex.printStackTrace();
+            player.sendMessage(BTEGGamemode.PREFIX + "§cPlease select a WorldEdit selection!");
+            return true;
+        }
+        this.saveBackup(player, region);
 
-                    for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
-                        for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
-                            for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
-                                if (region.contains(BlockVector3.at(i, j, k))) {
-                                    Block block = world.getBlockAt(i, j, k);
-                                    BlockType blockType = Converter.getBlockType(args[0]);
-                                    if (block.getType().toString().equalsIgnoreCase(BukkitAdapter.adapt(blockType).toString())) {
-                                        switch (getDirection(player)) {
-                                            case "NORTH":
-                                            case "SOUTH":
-                                                if(block.getLocation().getBlockZ()% 2 == 0) {
-                                                    world.getBlockAt(i, j, k).setType(Material.PINK_WOOL);
-                                                }else{
-                                                    world.getBlockAt(i, j, k).setType(Material.CYAN_WOOL);
-                                                }
-                                                break;
-                                            case "EAST":
-                                            case "WEST":
-                                                if(block.getLocation().getBlockX()% 2 == 0) {
-                                                    world.getBlockAt(i, j, k).setType(Material.PINK_WOOL);
-                                                }else{
-                                                    world.getBlockAt(i, j, k).setType(Material.CYAN_WOOL);
-                                                }
-                                                break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+        Direction playerDirection = this.getDirection(player);
+        String anvils;
+        if (playerDirection.isHorizontal()) {
+            player.chat("//side " + args[0] + " air n y");
+            anvils = "anvil:1";
+        } else {
+            player.chat("//side " + args[0] + " air e y");
+            anvils = "anvil";
+        }
 
-                    // Schienen mit verschiedenen Ausrichtungen vom NOrmen HUb nach verschiedenen winkeln pasten
+        if (overheadLine) {
+            this.createOverheadLines(player, middleBlockType);
+        }
 
+        String[] placeholderBlocks = new String[] {"light_gray_glazed_terracotta", "red_glazed_terracotta", middleBlockType.toString(), "yellow_glazed_terracotta", "cyan_glazed_terracotta"};
+        if (playerDirection.isHorizontal()) {
+            player.chat(String.format("//side %s %s n", placeholderBlocks[2], placeholderBlocks[1]));
+            player.chat(String.format("//side %s %s s", placeholderBlocks[2], placeholderBlocks[3]));
 
-                    overheadLines(args, player, region);
-                    if (getDirection(player).equalsIgnoreCase("east") || getDirection(player).equalsIgnoreCase("west")) {
-                        player.chat("//side pink_wool red_glazed_terracotta n");
-                        player.chat("//side pink_wool red_glazed_terracotta s");
+            if (!inGround) {
+                player.chat(String.format("//side %s %s n", placeholderBlocks[1], placeholderBlocks[0]));
+                player.chat(String.format("//side %s %s s", placeholderBlocks[3], placeholderBlocks[4]));
+            }
+        } else {
+            player.chat(String.format("//side %s %s w", placeholderBlocks[2], placeholderBlocks[1]));
+            player.chat(String.format("//side %s %s e", placeholderBlocks[2], placeholderBlocks[3]));
 
-                        player.chat("//side cyan_wool yellow_glazed_terracotta n");
-                        player.chat("//side cyan_wool yellow_glazed_terracotta s");
-
-                        if (args.length == 1 || args.length == 2 || ((args.length == 3 || args.length >= 4) && !args[2].equalsIgnoreCase("0"))) {
-                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta n");
-                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta s");
-
-                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta n");
-                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta s");
-                        }
-                    } else if (getDirection(player).equalsIgnoreCase("north") || getDirection(player).equalsIgnoreCase("south")) {
-                        player.chat("//side pink_wool red_glazed_terracotta w");
-                        player.chat("//side pink_wool red_glazed_terracotta e");
-
-                        player.chat("//side cyan_wool yellow_glazed_terracotta w");
-                        player.chat("//side cyan_wool yellow_glazed_terracotta e");
-
-                        if (args.length == 1 || args.length == 2 || ((args.length == 3 || args.length >= 4) && !args[2].equalsIgnoreCase("0"))) {
-                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta w");
-                            player.chat("//side red_glazed_terracotta light_gray_glazed_terracotta e");
-
-                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta w");
-                            player.chat("//side yellow_glazed_terracotta gray_glazed_terracotta e");
-                        }
-
-                    }
-                    player.chat("//re 249,239 " + anvils);
-                    if (args.length > 1) {
-                        if (!inGround) {
-                            player.chat("//re 243,35:6 " + args[1]);
-                        } else {
-                            player.chat("//re 243 " + args[1]);
-                        }
-                    } else {
-                        player.chat("//re 243 44");
-                    }
-
-                    if (!inGround) {
-                        player.chat("//re 242,35:9 0");
-                    } else {
-                        player.chat("//re 242 0");
-                        player.chat("//re 35:9,35:6 " + args[0]);
-                    }
-                    if (args.length >= 2) {
-                        if (args[1].equalsIgnoreCase("0")) {
-                            //player.chat("//re "+args[1]+" 0");
-                        }
-                    }
-                    if (inGround) {
-                        for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
-                            for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
-                                if (region.contains(BlockVector3.at(i, world.getHighestBlockYAt(i, k) - 1, k))) {
-                                    for (de.leander.bteggamemode.util.Block savedBlock : blocks) {
-                                        Block surfaceBlock = world.getBlockAt(i, savedBlock.getY(), k);
-                                        if (savedBlock.getX() == surfaceBlock.getLocation().getBlockX() && savedBlock.getZ() == surfaceBlock.getLocation().getBlockZ()) {
-                                            surfaceBlock.setType(savedBlock.getMat());
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-
-                }else{
-                    player.sendMessage(BTEGGamemode.prefix + "Usage:");
-                    player.sendMessage(BTEGGamemode.prefix + "//rail <Block-ID> <Block-ID-railway-sleepers-inside> <Block-ID-railway-sleepers-outside> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
-                }
-
+            if (!inGround) {
+                player.chat(String.format("//side %s %s w", placeholderBlocks[1], placeholderBlocks[0]));
+                player.chat(String.format("//side %s %s e", placeholderBlocks[3], placeholderBlocks[4]));
             }
         }
+        player.chat(String.format("//re %s,%s " + anvils, placeholderBlocks[1], placeholderBlocks[3]));
+
+        if (!inGround) {
+            if (playerDirection.isHorizontal()) {
+                player.chat(String.format("//re %s %s[north=none,south=low,west=none,east=none,up=false]", placeholderBlocks[0], railwaySleepersMaterial));
+                player.chat(String.format("//re %s %s[north=low,south=none,west=none,east=none,up=false]", placeholderBlocks[4], railwaySleepersMaterial));
+                player.chat(String.format("//re %s %s[north=low,south=low,west=none,east=none,up=false]", placeholderBlocks[2], railwaySleepersMaterial));
+            } else {
+                player.chat(String.format("//re %s %s[north=none,south=none,west=none,east=low,up=false]", placeholderBlocks[0], railwaySleepersMaterial));
+                player.chat(String.format("//re %s %s[north=none,south=none,west=low,east=low,up=false]", placeholderBlocks[2], railwaySleepersMaterial));
+                player.chat(String.format("//re %s %s[north=none,south=none,west=low,east=none,up=false]", placeholderBlocks[4], railwaySleepersMaterial));
+            }
+        }
+
         return true;
     }
 
-    private void overheadLines(String[] args, Player player, Region region) {
-        if(args.length>=4){
-            if(args[3].equalsIgnoreCase("y")) {
-                try {
-                    region.expand(BlockVector3.at(0,8,0));
-                } catch (RegionOperationException e) {
-                    throw new RuntimeException(e);
-                }
-
-                player.chat("//re >35:6 250");
-                player.chat("//re >35:9 250");
-                player.chat("//re >250 250");
-                player.chat("//re >250 250");
-                player.chat("//re >250 250");
-                player.chat("//re >250 250");
-                player.chat("//re >250 250");
-                player.chat("//re >250 101");
-                player.chat("//re 250 0");
-
-
-            }
+    private void createOverheadLines(Player player, BlockType middleBlockType) {
+        String overheadLineBlock;
+        if (this.getDirection(player).isHorizontal()) {
+            overheadLineBlock = "black_stained_glass_pane[north=false,south=false,west=true,east=true]";
+        } else {
+            overheadLineBlock = "black_stained_glass_pane[north=true,south=true,west=false,east=false]";
         }
+
+        player.chat(String.format("//re >%s %s", middleBlockType, overheadLineBlock));
+        for (int i = 0; i < 5; i++) {
+            player.chat(String.format("//re >%s %s", overheadLineBlock, overheadLineBlock));
+        }
+        player.chat(String.format("//re >%s lime_glazed_terracotta", middleBlockType));
+        for (int i = 0; i < 4; i++) {
+            player.chat("//re >lime_glazed_terracotta lime_glazed_terracotta");
+        }
+        player.chat("//re lime_glazed_terracotta air");
     }
 
-    public static String getDirection(Player player) {
+    private Direction getDirection(Player player) {
         float yaw = player.getLocation().getYaw();
         if (yaw < 0) {
             yaw += 360;
         }
         if (yaw >= 315 || yaw < 45) {
-            return "SOUTH";
+            return Direction.SOUTH;
         } else if (yaw < 135) {
-            return "WEST";
+            return Direction.WEST;
         } else if (yaw < 225) {
-            return "NORTH";
+            return Direction.NORTH;
         } else if (yaw < 315) {
-            return "EAST";
+            return Direction.EAST;
         }
-        return "NORTH";
+        return Direction.NORTH;
     }
 
     @Override
@@ -265,12 +164,34 @@ public class RailCommand implements TabExecutor {
         if (!sender.hasPermission("bteg.builder")) {
             return emptyList();
         }
-        switch(args.length){
-            case 1,2,3:
-                return TabUtil.getMaterialBlocks(args[args.length-1]);
-            case 4, 5: return Arrays.asList("y", "n");
+        return switch (args.length) {
+            case 1 -> {
+                List<String> list = new ArrayList<>(TabUtil.getMaterialBlocks(args[0], true));
+                if("undo".contains(args[0].toLowerCase())) {
+                    list.add("undo");
+                }
+                yield list;
+            }
+            case 2 -> TabUtil.getWallBlocks(args[1]);
+            case 3, 4 -> Arrays.asList("y", "n");
+            default -> emptyList();
+        };
+    }
+
+    enum Direction {
+        NORTH (false),
+        SOUTH (false),
+        EAST (true),
+        WEST (true);
+
+        private final boolean horizontal;
+
+        Direction(boolean horizontal) {
+            this.horizontal = horizontal;
         }
 
-        return emptyList();
+        public boolean isHorizontal() {
+            return horizontal;
+        }
     }
 }

@@ -3,101 +3,76 @@ package de.leander.bteggamemode.commands;
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitPlayer;
-import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldedit.extension.factory.PatternFactory;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.function.pattern.Pattern;
-import com.sk89q.worldedit.function.pattern.RandomStatePattern;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.block.*;
-import com.sk89q.worldedit.world.registry.LegacyMapper;
 import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteggamemode.util.CommandWithBackup;
 import de.leander.bteggamemode.util.Converter;
 import de.leander.bteggamemode.util.TabUtil;
-import de.leander.bteggamemode.util.WorldEditUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
-import static com.google.common.io.Files.map;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 
-public class ConnectCommand implements TabExecutor {
+public class ConnectCommand extends CommandWithBackup implements TabExecutor {
 
-
-    static World world1;
-
-    private static Polygonal2DRegion polyRegion;
-    static Clipboard clipboard;
-
-    static Clipboard backup;
-    static BlockVector3 koordinaten;
+    private Polygonal2DRegion polyRegion;
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) { return true; }
-        Player player = (Player) sender;
-        if (command.getName().equalsIgnoreCase("connect")||command.getName().equalsIgnoreCase("/connect")) {
-            if (player.hasPermission("bteg.builder")) {
-                if (args.length == 1) {
-                    if (args[0].equals("undo")) {
-                        WorldEditUtil.pasteBackup(player, backup, koordinaten);
-                        return true;
-                    } else {
-                        try {
-                            if(args[0].equalsIgnoreCase("plot")){
-                                terraform(player, args[0],true);
-                            }else{
-                                terraform(player, args[0],false);
-                            }
-                        } catch (MaxChangedBlocksException | EmptyClipboardException e) {
-                            e.printStackTrace();
-                        }
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        if (!(sender instanceof Player player) || !(command.getName().equalsIgnoreCase("connect") || command.getName().equalsIgnoreCase("/connect"))) {
+            return true;
+        }
+        if (!player.hasPermission("bteg.builder")) {
+            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for //connect");
+            return true;
+        }
+        if (args.length != 1) {
+            player.sendMessage(BTEGGamemode.PREFIX + "§cWrong usage");
+            player.sendMessage(BTEGGamemode.PREFIX + "/connect <Block-ID>");
+            player.sendMessage(BTEGGamemode.PREFIX + "/connect <undo>");
+        }
 
-                        world1 = player.getWorld();
-                        return true;
-                    }
-                }else{
-                    player.sendMessage(BTEGGamemode.prefix + "§cWrong usage");
-                    player.sendMessage(BTEGGamemode.prefix + "/connect <Block-ID>");
-                    return true;
+        if (args[0].equals("undo")) {
+            this.pasteBackup();
+        } else {
+            try {
+                if(args[0].equalsIgnoreCase("plot")){
+                    this.terraform(player, args[0],true);
+                } else {
+                    this.terraform(player, args[0],false);
                 }
-            }else{
-                player.sendMessage(BTEGGamemode.prefix + "§cNo permission for //connect");
-                return true;
+            } catch (MaxChangedBlocksException | EmptyClipboardException e) {
+                e.printStackTrace();
             }
         }
+
         return true;
     }
 
-    void terraform(Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
+    private void terraform(Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
         Region plotRegion;
         // Get WorldEdit selection of player
         try {
-            plotRegion = WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelection(WorldEdit.getInstance().getSessionManager().findByName(player.getName()).getSelectionWorld());
+            LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
+            if(localSession == null) {
+                return;
+            }
+            plotRegion = localSession.getSelection(localSession.getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException ex) {
             ex.printStackTrace();
             player.sendMessage("§7§l>> §cPlease select a WorldEdit selection!");
@@ -105,76 +80,72 @@ public class ConnectCommand implements TabExecutor {
         }
         try {
             // Check if WorldEdit selection is polygonal
-            if (plotRegion instanceof Polygonal2DRegion) {
-                // Cast WorldEdit region to polygonal region
-                polyRegion = (Polygonal2DRegion) plotRegion;
-                if (polyRegion.getLength() > 500 || polyRegion.getWidth() > 500 || polyRegion.getHeight() > 30) {
-                    player.sendMessage("§7§l>> §cPlease adjust your selection size!");
-                    return;
-                }
-                // Set minimum selection height under player location
-
-
-            } else {
+            if (!(plotRegion instanceof Polygonal2DRegion)) {
                 player.sendMessage("§7§l>> §cPlease use poly selection to connect!");
                 return;
             }
+
+            // Cast WorldEdit region to polygonal region
+            this.polyRegion = (Polygonal2DRegion) plotRegion;
+            if (this.polyRegion.getLength() > 500 || this.polyRegion.getWidth() > 500 || this.polyRegion.getHeight() > 30) {
+                player.sendMessage("§7§l>> §cPlease adjust your selection size!");
+                return;
+            }
+            // Set minimum selection height under player location
+
         } catch (Exception ex) {
             player.sendMessage("§7§l>> §cAn error occurred while selection area!");
             return;
         }
 
-        line(polyRegion, player, pattern, plot);
+        this.createLine(this.polyRegion, player, pattern, plot);
 
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 
     }
 
-    private static void line(Region region, Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
-            world1 = player.getWorld();
-
+    private void createLine(Region region, Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
             //WorldEdit CLipboard backup
-            backup = WorldEditUtil.saveBackup(polyRegion, player);
-            koordinaten = BlockVector3.at(region.getMinimumPoint().getBlockX(),region.getMinimumPoint().getY(),region.getMinimumPoint().getZ());
+            this.saveBackup(player, region);
 
-            List<BlockVector2> points = polyRegion.getPoints();
-            int y = polyRegion.getMaximumPoint().getBlockY();
+            List<BlockVector2> points = this.polyRegion.getPoints();
+            int y = this.polyRegion.getMaximumPoint().getBlockY();
 
-            BlockType blockType = null;
-            if(plot){
+            BlockType blockType;
+            if (plot) {
                 blockType = BlockTypes.get("lapis_block");
-            }else {
-                blockType = Converter.getBlockType(pattern);
+            } else {
+                blockType = Converter.getBlockType(pattern, player);
             }
 
             BlockState blockState = blockType.getDefaultState();
 
-            Pattern pat = new RandomStatePattern(new FuzzyBlockState(blockState));
+            Pattern pat = blockState; //new RandomStatePattern(new FuzzyBlockState(blockState));
 
             BukkitPlayer actor = BukkitAdapter.adapt(player);
             SessionManager manager = WorldEdit.getInstance().getSessionManager();
             LocalSession localSession = manager.get(actor);
 
-            for(int i = 0; points.size()>i;i++){
+            for (int i = 0; points.size() > i; i++){
                 EditSession editSession = localSession.createEditSession(actor);
-                if(i == points.size()-1){
-                    BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(),y,points.get(i).getBlockZ());
-                    BlockVector3 vector1 = BlockVector3.at(points.get(i+1-points.size()).getBlockX(),y,points.get(i+1-points.size()).getBlockZ());
+                if (i == points.size() - 1) {
+                    BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(), y, points.get(i).getBlockZ());
+                    BlockVector3 vector1 = BlockVector3.at(points.get(i + 1 - points.size()).getBlockX(), y, points.get(i + 1 - points.size()).getBlockZ());
                     editSession.drawLine(pat,vector, vector1,0,true);
                     localSession.remember(editSession);
-                }else{
-                    BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(),y,points.get(i).getBlockZ());
-                    BlockVector3 vector1 = BlockVector3.at(points.get(i+1).getBlockX(),y,points.get(i+1).getBlockZ());
-                    editSession.drawLine(pat,vector, vector1,0,true);
+                } else {
+                    BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(), y, points.get(i).getBlockZ());
+                    BlockVector3 vector1 = BlockVector3.at(points.get(i + 1).getBlockX(), y, points.get(i + 1).getBlockZ());
+                    editSession.drawLine(pat, vector, vector1, 0, true);
                     localSession.remember(editSession);
                 }
                 editSession.close();
             }
-            if(plot){
+            if (plot) {
                 player.chat("//re !22 82");
-                player.sendMessage(BTEGGamemode.prefix + "Successfully prepared plot!");
-            }else{
-                player.sendMessage(BTEGGamemode.prefix + "Blocks successfully connected!");
+                player.sendMessage(BTEGGamemode.PREFIX + "Successfully prepared plot!");
+            } else {
+                player.sendMessage(BTEGGamemode.PREFIX + "Blocks successfully connected!");
             }
 
 
@@ -187,7 +158,11 @@ public class ConnectCommand implements TabExecutor {
         }
         // First argument: target
         if (args.length == 1) {
-                return TabUtil.getMaterialBlocks(args[args.length-1]);
+            List<String> list = new ArrayList<>(TabUtil.getMaterialBlocks(args[0], true));
+            if("undo".contains(args[0].toLowerCase())) {
+                list.add("undo");
+            }
+            return list;
         }
 
         return emptyList();

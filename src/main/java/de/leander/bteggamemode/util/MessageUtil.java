@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 public class MessageUtil {
 
     public static void sendHoverClickMessage(Player player, String content, String hoverText, ClickEvent clickEvent) {
-        Component message = Component.text(BTEGGamemode.prefix + content);
+        Component message = Component.text(BTEGGamemode.PREFIX + content);
         Component hover = message.hoverEvent(Component.text(hoverText));
         Component click = hover.clickEvent(clickEvent);
         player.sendMessage(click);
