@@ -35,7 +35,7 @@ public class JoinMessage implements Listener {
     @EventHandler
     public static void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        event.quitMessage(Component.text(BTEGGamemode.PREFIX + player.displayName() + " switched to another server"));
+        event.quitMessage(Component.text(BTEGGamemode.PREFIX).append(player.displayName().append(Component.text(" switched to another server"))).color(NamedTextColor.GRAY));
         player.setWalkSpeed(0.2F);
         player.setFlySpeed(0.1F);
     }
