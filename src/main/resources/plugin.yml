@@ -12,7 +12,7 @@ commands:
     description: Gets the region file of the current location
     usage: /regionfile <cc>
     aliases:
-      - /rgf
+      - rgf
   lidar:
     description: Saves blocks - regenerates region - replaces surfaces blocks with saved blocks
     usage: /lidar <save>
@@ -51,3 +51,9 @@ commands:
     usage: /connect <Block-ID or undo>
     aliases:
       - /connect
+  norms:
+    description: Teleports you to the normen-hub
+    usage: /norms
+    aliases:
+      - normen
+      - norme
