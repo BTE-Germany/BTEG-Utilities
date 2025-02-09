@@ -13,7 +13,7 @@ public class CleanUpCommand implements CommandExecutor {
     final String wood = "oak_wood,spruce_wood,birch_wood,jungle_wood,acacia_wood,dark_oak_wood,mangrove_wood,cherry_wood,stripped_oak_wood,stripped_spruce_wood,stripped_birch_wood,stripped_jungle_wood,stripped_acacia_wood,stripped_dark_oak_wood,stripped_mangrove_wood,stripped_cherry_wood";
     final String leaves = "oak_leaves,spruce_leaves,birch_leaves,jungle_leaves,acacia_leaves,dark_oak_leaves,mangrove_leaves,cherry_leaves,azalea_leaves,flowering_azalea_leaves";
     final String flowers = "dandelion,poppy,blue_orchid,allium,azure_bluet,red_tulip,orange_tulip,white_tulip,pink_tulip,oxeye_daisy,cornflower,lily_of_the_valley,torchflower,wither_rose,pink_petals,spore_blossom,sunflower,lilac,rose_bush,peony,pitcher_plant";
-    final String other = "mangrove_roots,muddy_mangrove_roots,mushroom_stem,brown_mushroom_block,red_mushroom_block,grass,fern,bamboo,sugar_cane,vine,tall_grass,large_fern,brown_mushroom,red_mushroom,azalea,flowering_azalea,melon,pumpkin,oak_fence,birch_fence,spruce_fence,oak_fence_gate,birch_fence_gate,spruce_fence_gate";
+    final String other = "mangrove_roots,muddy_mangrove_roots,mushroom_stem,brown_mushroom_block,red_mushroom_block,short_grass,tall_grass,fern,bamboo,sugar_cane,vine,large_fern,brown_mushroom,red_mushroom,azalea,flowering_azalea,melon,pumpkin,oak_fence,birch_fence,spruce_fence,oak_fence_gate,birch_fence_gate,spruce_fence_gate";
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
