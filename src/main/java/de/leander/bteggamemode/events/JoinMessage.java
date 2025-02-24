@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class JoinMessage implements Listener {
 
@@ -46,9 +47,14 @@ public class JoinMessage implements Listener {
      */
     @EventHandler
     public static void onGMChange(PlayerGameModeChangeEvent event) {
-        if(event.getNewGameMode() == GameMode.ADVENTURE || event.getNewGameMode() == GameMode.SURVIVAL) {
-            event.setCancelled(true);
-        }
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if(event.getNewGameMode() == GameMode.ADVENTURE || event.getNewGameMode() == GameMode.SURVIVAL) {
+                    event.setCancelled(true);
+                }
+            }
+        }.runTaskLater(BTEGGamemode.getPlugin(), 5);
 
     }
 
