@@ -24,12 +24,24 @@ public class JoinMessage implements Listener {
         if (player.hasPermission("bteg.builder")) {
             player.setGameMode(GameMode.CREATIVE);
             player.sendMessage(BTEGGamemode.PREFIX + "Gamemode set to creative!");
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    player.setGameMode(GameMode.CREATIVE);
+                }
+            }.runTaskLater(BTEGGamemode.getPlugin(), 5);
         } else {
             Component message = Component.text(BTEGGamemode.PREFIX + "Gamemode set to §9spectator§7! As a \uE363 can only load already generated chunks!");
             Component hover = message.hoverEvent(Component.text("Click here to understand why").color(NamedTextColor.GREEN));
             Component click = hover.clickEvent(ClickEvent.openUrl("https://docs.google.com/document/d/e/2PACX-1vS0IGQX5lcjkf4vuIsjdHPPjvpdRfTCPOdvnu_n5udBATQKdcp4nelO3Q2eM8vTPKJ3oIlPNL5LIifF/pub"));
             player.setGameMode(GameMode.SPECTATOR);
             player.sendMessage(click);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    player.setGameMode(GameMode.SPECTATOR);
+                }
+            }.runTaskLater(BTEGGamemode.getPlugin(), 5);
         }
     }
 
@@ -45,7 +57,7 @@ public class JoinMessage implements Listener {
     /*
            Kein Plan warum alles andere nicht geht, aber das hier fixt das GM on join problem:
      */
-    @EventHandler
+    /*@EventHandler
     public static void onGMChange(PlayerGameModeChangeEvent event) {
         new BukkitRunnable() {
             @Override
@@ -56,7 +68,6 @@ public class JoinMessage implements Listener {
             }
         }.runTaskLater(BTEGGamemode.getPlugin(), 5);
 
-    }
-
+    }*/
 
 }
