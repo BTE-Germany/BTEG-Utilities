@@ -1,12 +1,12 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.regions.Region;
-import de.leander.bteggamemode.BTEGGamemode;
-import de.leander.bteggamemode.util.CommandWithBackup;
+import de.leander.bteg_utilities.BTEGUtilities;
+import de.leander.bteg_utilities.util.CommandWithBackup;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,15 +21,14 @@ public class CoverCommand extends CommandWithBackup implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("bteg.builder")) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for //cover");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //cover");
             return true;
         }
-        if (args.length == 1) {
-            if(args[0].equalsIgnoreCase("undo")){
+        if (args.length == 1 && args[0].equalsIgnoreCase("undo")){
                 this.pasteBackup();
                 return true;
-            }
         }
+
 
         Region region;
         LocalSession localSession;
@@ -41,7 +40,7 @@ public class CoverCommand extends CommandWithBackup implements CommandExecutor {
             region = localSession.getSelection(localSession.getSelectionWorld());
         } catch (IncompleteRegionException e) {
             e.printStackTrace();
-            player.sendMessage(BTEGGamemode.PREFIX + "§cPlease select a WorldEdit selection!");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cPlease select a WorldEdit selection!");
             return true;
         }
         this.saveBackup(player, region);

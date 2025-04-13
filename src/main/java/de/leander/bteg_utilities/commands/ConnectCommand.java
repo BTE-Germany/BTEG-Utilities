@@ -1,19 +1,18 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitPlayer;
-import com.sk89q.worldedit.function.pattern.Pattern;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.block.*;
-import de.leander.bteggamemode.BTEGGamemode;
-import de.leander.bteggamemode.util.CommandWithBackup;
-import de.leander.bteggamemode.util.Converter;
-import de.leander.bteggamemode.util.TabUtil;
+import de.leander.bteg_utilities.BTEGUtilities;
+import de.leander.bteg_utilities.util.CommandWithBackup;
+import de.leander.bteg_utilities.util.Converter;
+import de.leander.bteg_utilities.util.TabUtil;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -33,31 +32,27 @@ public class ConnectCommand extends CommandWithBackup implements TabExecutor {
     private Polygonal2DRegion polyRegion;
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
         if (!(sender instanceof Player player) || !(command.getName().equalsIgnoreCase("connect") || command.getName().equalsIgnoreCase("/connect"))) {
             return true;
         }
         if (!player.hasPermission("bteg.builder")) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for //connect");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //connect");
             return true;
         }
         if (args.length != 1) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cWrong usage");
-            player.sendMessage(BTEGGamemode.PREFIX + "/connect <Block-ID>");
-            player.sendMessage(BTEGGamemode.PREFIX + "/connect <undo>");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cWrong usage");
+            player.sendMessage(BTEGUtilities.PREFIX + "/connect <Block-ID>");
+            player.sendMessage(BTEGUtilities.PREFIX + "/connect <undo>");
         }
 
         if (args[0].equals("undo")) {
             this.pasteBackup();
         } else {
             try {
-                if(args[0].equalsIgnoreCase("plot")){
-                    this.terraform(player, args[0],true);
-                } else {
-                    this.terraform(player, args[0],false);
-                }
+                this.terraform(player, args[0], args[0].equalsIgnoreCase("plot"));
             } catch (MaxChangedBlocksException | EmptyClipboardException e) {
-                e.printStackTrace();
+                BTEGUtilities.getPlugin().getComponentLogger().warn("Connect Failed because of empty Clipboard or too much blocks.", e);
             }
         }
 
@@ -74,7 +69,7 @@ public class ConnectCommand extends CommandWithBackup implements TabExecutor {
             }
             plotRegion = localSession.getSelection(localSession.getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException ex) {
-            ex.printStackTrace();
+            BTEGUtilities.getPlugin().getComponentLogger().warn("Connect failed because there is no WorldEdit selection (we assume). ", ex);
             player.sendMessage("§7§l>> §cPlease select a WorldEdit selection!");
             return;
         }
@@ -105,11 +100,10 @@ public class ConnectCommand extends CommandWithBackup implements TabExecutor {
     }
 
     private void createLine(Region region, Player player, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
-            //WorldEdit CLipboard backup
             this.saveBackup(player, region);
 
             List<BlockVector2> points = this.polyRegion.getPoints();
-            int y = this.polyRegion.getMaximumPoint().getBlockY();
+            int y = this.polyRegion.getMaximumPoint().y();
 
             BlockType blockType;
             if (plot) {
@@ -118,34 +112,31 @@ public class ConnectCommand extends CommandWithBackup implements TabExecutor {
                 blockType = Converter.getBlockType(pattern, player);
             }
 
-            BlockState blockState = blockType.getDefaultState();
+        assert blockType != null;
+        BlockState blockState = blockType.getDefaultState();
 
-            Pattern pat = blockState; //new RandomStatePattern(new FuzzyBlockState(blockState));
-
-            BukkitPlayer actor = BukkitAdapter.adapt(player);
+        BukkitPlayer actor = BukkitAdapter.adapt(player);
             SessionManager manager = WorldEdit.getInstance().getSessionManager();
             LocalSession localSession = manager.get(actor);
 
             for (int i = 0; points.size() > i; i++){
                 EditSession editSession = localSession.createEditSession(actor);
+                BlockVector3 vector = BlockVector3.at(points.get(i).x(), y, points.get(i).z());
+                BlockVector3 vector1;
                 if (i == points.size() - 1) {
-                    BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(), y, points.get(i).getBlockZ());
-                    BlockVector3 vector1 = BlockVector3.at(points.get(i + 1 - points.size()).getBlockX(), y, points.get(i + 1 - points.size()).getBlockZ());
-                    editSession.drawLine(pat,vector, vector1,0,true);
-                    localSession.remember(editSession);
+                    vector1 = BlockVector3.at(points.get(i + 1 - points.size()).x(), y, points.get(i + 1 - points.size()).z());
                 } else {
-                    BlockVector3 vector = BlockVector3.at(points.get(i).getBlockX(), y, points.get(i).getBlockZ());
-                    BlockVector3 vector1 = BlockVector3.at(points.get(i + 1).getBlockX(), y, points.get(i + 1).getBlockZ());
-                    editSession.drawLine(pat, vector, vector1, 0, true);
-                    localSession.remember(editSession);
+                    vector1 = BlockVector3.at(points.get(i + 1).x(), y, points.get(i + 1).z());
                 }
+                editSession.drawLine(blockState, vector, vector1,0,true);
+                localSession.remember(editSession);
                 editSession.close();
             }
             if (plot) {
                 player.chat("//re !22 82");
-                player.sendMessage(BTEGGamemode.PREFIX + "Successfully prepared plot!");
+                player.sendMessage(BTEGUtilities.PREFIX + "Successfully prepared plot!");
             } else {
-                player.sendMessage(BTEGGamemode.PREFIX + "Blocks successfully connected!");
+                player.sendMessage(BTEGUtilities.PREFIX + "Blocks successfully connected!");
             }
 
 

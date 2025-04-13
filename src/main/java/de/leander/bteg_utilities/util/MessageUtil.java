@@ -1,6 +1,6 @@
-package de.leander.bteggamemode.util;
+package de.leander.bteg_utilities.util;
 
-import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteg_utilities.BTEGUtilities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.entity.Player;
@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 public class MessageUtil {
 
     public static void sendHoverClickMessage(Player player, String content, String hoverText, ClickEvent clickEvent) {
-        Component message = Component.text(BTEGGamemode.PREFIX + content);
+        Component message = Component.text(BTEGUtilities.PREFIX + content);
         Component hover = message.hoverEvent(Component.text(hoverText));
         Component click = hover.clickEvent(clickEvent);
         player.sendMessage(click);

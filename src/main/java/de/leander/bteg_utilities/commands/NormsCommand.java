@@ -1,6 +1,6 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
-import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteg_utilities.BTEGUtilities;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -17,12 +17,12 @@ public class NormsCommand  implements CommandExecutor {
             return true;
         }
         if(!player.hasPermission("bteg.norms")){
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for /norms");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for /norms");
             return true;
         }
         World world = Bukkit.getWorld("normen-hub");
         if(player.getWorld().equals(world)){
-            player.sendMessage(BTEGGamemode.PREFIX + "§cYou are already in the Normen-Hub");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cYou are already in the Normen-Hub");
             return true;
         }
         player.teleport(new Location(world, 0.5, 5, 0.5));

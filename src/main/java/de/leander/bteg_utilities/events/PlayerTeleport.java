@@ -1,6 +1,6 @@
-package de.leander.bteggamemode.events;
+package de.leander.bteg_utilities.events;
 
-import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteg_utilities.BTEGUtilities;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,7 +16,7 @@ public class PlayerTeleport implements Listener {
             return;
         }
         event.setCancelled(true);
-        player.sendMessage(BTEGGamemode.PREFIX + "§cDu bist dazu nicht berechtigt.");
+        player.sendMessage(BTEGUtilities.PREFIX + "§cDu bist dazu nicht berechtigt.");
     }
 
 }

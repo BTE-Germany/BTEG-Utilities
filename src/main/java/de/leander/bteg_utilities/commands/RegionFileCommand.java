@@ -1,7 +1,7 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
-import de.leander.bteggamemode.BTEGGamemode;
-import de.leander.bteggamemode.util.MessageUtil;
+import de.leander.bteg_utilities.BTEGUtilities;
+import de.leander.bteg_utilities.util.MessageUtil;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,16 +19,13 @@ public class RegionFileCommand implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("bteg.regionfile")){
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for /regionfile");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for /regionfile");
             return true;
         }
 
         int x = player.getLocation().getBlockX();
         int z = player.getLocation().getBlockZ();
-        boolean isVanilla = true;
-        if (new File(player.getWorld().getWorldFolder().getAbsolutePath() + "region3d").exists() || (args.length == 1 && args[0].equalsIgnoreCase("cc"))) {
-            isVanilla = false;
-        }
+        boolean isVanilla = !new File(player.getWorld().getWorldFolder().getAbsolutePath() + "region3d").exists() && (args.length != 1 || !args[0].equalsIgnoreCase("cc"));
 
         int chunkX = x >> 4;
         int chunkZ = z >> 4;

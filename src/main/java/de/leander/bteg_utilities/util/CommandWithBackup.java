@@ -1,4 +1,4 @@
-package de.leander.bteggamemode.util;
+package de.leander.bteg_utilities.util;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -11,7 +11,7 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
-import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteg_utilities.BTEGUtilities;
 import org.bukkit.entity.Player;
 
 public class CommandWithBackup {
@@ -42,7 +42,7 @@ public class CommandWithBackup {
                     .build();
             Operations.complete(operation);
         }
-        this.player.sendMessage(BTEGGamemode.PREFIX + "Undo successful!");
+        this.player.sendMessage(BTEGUtilities.PREFIX + "Undo successful!");
     }
 
 }

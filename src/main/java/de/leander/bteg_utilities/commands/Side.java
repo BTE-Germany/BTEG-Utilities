@@ -1,4 +1,4 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -8,10 +8,10 @@ import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 
 import com.sk89q.worldedit.world.block.BlockType;
-import de.leander.bteggamemode.BTEGGamemode;
-import de.leander.bteggamemode.util.CommandWithBackup;
-import de.leander.bteggamemode.util.Converter;
-import de.leander.bteggamemode.util.TabUtil;
+import de.leander.bteg_utilities.BTEGUtilities;
+import de.leander.bteg_utilities.util.CommandWithBackup;
+import de.leander.bteg_utilities.util.Converter;
+import de.leander.bteg_utilities.util.TabUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -47,13 +47,13 @@ public class Side extends CommandWithBackup implements TabExecutor {
             return true;
         }
         if (!player.hasPermission("bteg.builder")) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for //side");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //side");
             return true;
         }
         if (args.length == 0 || args.length == 2) {
-            player.sendMessage(BTEGGamemode.PREFIX + "Usage:");
-            player.sendMessage(BTEGGamemode.PREFIX + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
-            player.sendMessage(BTEGGamemode.PREFIX + "//side <undo>");
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage:");
+            player.sendMessage(BTEGUtilities.PREFIX + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+            player.sendMessage(BTEGUtilities.PREFIX + "//side <undo>");
             return true;
         }
 
@@ -62,9 +62,9 @@ public class Side extends CommandWithBackup implements TabExecutor {
                 this.pasteBackup();
                 return true;
             }
-            player.sendMessage(BTEGGamemode.PREFIX + "Usage:");
-            player.sendMessage(BTEGGamemode.PREFIX + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
-            player.sendMessage(BTEGGamemode.PREFIX + "//side <undo>");
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage:");
+            player.sendMessage(BTEGUtilities.PREFIX + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+            player.sendMessage(BTEGUtilities.PREFIX + "//side <undo>");
             return true;
         }
 
@@ -78,8 +78,8 @@ public class Side extends CommandWithBackup implements TabExecutor {
             } else if (args[3].equalsIgnoreCase("n") || args[3].equalsIgnoreCase("no")) {
                 this.ignoreSameBlock = false;
             } else {
-                player.sendMessage(BTEGGamemode.PREFIX + "§cWrong usage:");
-                player.sendMessage(BTEGGamemode.PREFIX + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
+                player.sendMessage(BTEGUtilities.PREFIX + "§cWrong usage:");
+                player.sendMessage(BTEGUtilities.PREFIX + "//side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>");
                 return true;
             }
 
@@ -91,7 +91,7 @@ public class Side extends CommandWithBackup implements TabExecutor {
         try {
             this.setSelection(player);
         } catch (MaxChangedBlocksException | EmptyClipboardException e) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cAn error occurred.");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred.");
             e.printStackTrace();
         }
 
@@ -111,26 +111,25 @@ public class Side extends CommandWithBackup implements TabExecutor {
             plotRegion = localSession.getSelection(localSession.getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException ex) {
             ex.printStackTrace();
-            player.sendMessage(BTEGGamemode.PREFIX + " §cPlease select a WorldEdit selection!");
+            player.sendMessage(BTEGUtilities.PREFIX + " §cPlease select a WorldEdit selection!");
             return;
         }
         try {
             if (plotRegion instanceof Polygonal2DRegion) {
                 // Cast WorldEdit region to polygonal region
                 this.polyRegion = (Polygonal2DRegion) plotRegion;
-                if (!player.hasPermission("bteg.advanced")) {
-                    if (this.polyRegion.getLength() > 500 || this.polyRegion.getWidth() > 500 || this.polyRegion.getHeight() > 200) {
+                if (!player.hasPermission("bteg.advanced") && (this.polyRegion.getLength() > 500 || this.polyRegion.getWidth() > 500 || this.polyRegion.getHeight() > 200)) {
                         player.sendMessage("§7§l>> §cPlease adjust your selection size!");
                         return;
                     }
-                }
+
                 // Set minimum selection height under player location
 
             } else if (plotRegion instanceof CuboidRegion) {
                 this.cuboidRegion = (CuboidRegion) plotRegion;
             }
         } catch (Exception ex) {
-            player.sendMessage(BTEGGamemode.PREFIX + " §cAn error occurred while select area!");
+            player.sendMessage(BTEGUtilities.PREFIX + " §cAn error occurred while select area!");
             return;
         }
         if (plotRegion instanceof Polygonal2DRegion) {
@@ -143,7 +142,7 @@ public class Side extends CommandWithBackup implements TabExecutor {
     }
 
 
-    private void replace(Region region, Player player) throws MaxChangedBlocksException, EmptyClipboardException {
+    private void replace(Region region, @NotNull Player player) throws MaxChangedBlocksException, EmptyClipboardException {
 
         this.world1 = player.getWorld();
 
@@ -155,9 +154,9 @@ public class Side extends CommandWithBackup implements TabExecutor {
 
         int blocks = 0;
 
-        for (int i = region.getMinimumPoint().getBlockX(); i <= region.getMaximumPoint().getBlockX(); i++) {
-            for (int j = region.getMinimumPoint().getBlockY(); j <= region.getMaximumPoint().getBlockY(); j++) {
-                for (int k = region.getMinimumPoint().getBlockZ(); k <= region.getMaximumPoint().getBlockZ(); k++) {
+        for (int i = region.getMinimumPoint().x(); i <= region.getMaximumPoint().x(); i++) {
+            for (int j = region.getMinimumPoint().y(); j <= region.getMaximumPoint().y(); j++) {
+                for (int k = region.getMinimumPoint().z(); k <= region.getMaximumPoint().z(); k++) {
                     if (region.contains(BlockVector3.at(i, j, k))) {
                         Block block = this.world1.getBlockAt(i, j, k);
                         if (block.getType().toString().equalsIgnoreCase(BukkitAdapter.adapt(this.preBlock).toString())) {
@@ -273,19 +272,12 @@ public class Side extends CommandWithBackup implements TabExecutor {
                                     }
                                 }
                             }
-
                         }
-
-
-
-
                     }
                 }
-
             }
-
         }
-        player.sendMessage(BTEGGamemode.PREFIX + "Successfully replaced §6§l" + blocks + " §r§7blocks sideways!");
+        player.sendMessage(BTEGUtilities.PREFIX + "Successfully replaced §6§l" + blocks + " §r§7blocks sideways!");
         this.ignoreSameBlock = false;
         this.masks = null;
     }

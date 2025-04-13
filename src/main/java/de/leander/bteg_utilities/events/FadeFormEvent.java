@@ -1,4 +1,4 @@
-package de.leander.bteggamemode.events;
+package de.leander.bteg_utilities.events;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

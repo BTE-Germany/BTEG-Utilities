@@ -1,4 +1,4 @@
-package de.leander.bteggamemode.util;
+package de.leander.bteg_utilities.util;
 
 import com.destroystokyo.paper.MaterialSetTag;
 import org.bukkit.Material;

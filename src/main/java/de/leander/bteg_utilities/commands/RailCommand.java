@@ -1,4 +1,4 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
 import com.sk89q.worldedit.*;
 
@@ -7,10 +7,10 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionOperationException;
 
 import com.sk89q.worldedit.world.block.BlockType;
-import de.leander.bteggamemode.BTEGGamemode;
-import de.leander.bteggamemode.util.CommandWithBackup;
-import de.leander.bteggamemode.util.Converter;
-import de.leander.bteggamemode.util.TabUtil;
+import de.leander.bteg_utilities.BTEGUtilities;
+import de.leander.bteg_utilities.util.CommandWithBackup;
+import de.leander.bteg_utilities.util.Converter;
+import de.leander.bteg_utilities.util.TabUtil;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -34,13 +34,13 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
             return true;
         }
         if (!player.hasPermission("bteg.builder")) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for //rail");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //rail");
             return true;
         }
         if (args.length == 0) {
-            player.sendMessage(BTEGGamemode.PREFIX + "Usage:");
-            player.sendMessage(BTEGGamemode.PREFIX + "//rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
-            player.sendMessage(BTEGGamemode.PREFIX + "//rail <undo>");
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage:");
+            player.sendMessage(BTEGUtilities.PREFIX + "//rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
+            player.sendMessage(BTEGUtilities.PREFIX + "//rail <undo>");
             return true;
         }
 
@@ -68,7 +68,7 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
             }
         } catch (NullPointerException | IncompleteRegionException | RegionOperationException ex) {
             ex.printStackTrace();
-            player.sendMessage(BTEGGamemode.PREFIX + "§cPlease select a WorldEdit selection!");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cPlease select a WorldEdit selection!");
             return true;
         }
         this.saveBackup(player, region);

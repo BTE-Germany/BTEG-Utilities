@@ -1,6 +1,6 @@
-package de.leander.bteggamemode.commands;
+package de.leander.bteg_utilities.commands;
 
-import de.leander.bteggamemode.BTEGGamemode;
+import de.leander.bteg_utilities.BTEGUtilities;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -20,11 +20,11 @@ public class Speed implements TabExecutor {
             return true;
         }
         if (!player.hasPermission("bteg.speed")) {
-            player.sendMessage(BTEGGamemode.PREFIX + "§cNo permission for /speed");
+            player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for /speed");
             return true;
         }
         if (args.length != 1) {
-            player.sendMessage(BTEGGamemode.PREFIX + "Usage: /speed <0-5>");
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage: /speed <0-5>");
             return true;
         }
 
@@ -32,22 +32,22 @@ public class Speed implements TabExecutor {
         if (speed.equals("n") || speed.equals("normal")) {
             player.setWalkSpeed(0.2F);
             player.setFlySpeed(0.1F);
-            player.sendMessage(BTEGGamemode.PREFIX + "New speed: Normal");
+            player.sendMessage(BTEGUtilities.PREFIX + "New speed: Normal");
             return true;
         } else if (speed.contains(",") || speed.contains(".") || speed.matches("1") || speed.matches("2") || speed.matches("3") || speed.matches("4") || speed.matches("5")) {
 
             float newSpeed = Float.parseFloat(speed.replace(",", "."));
             if (newSpeed < 0 || newSpeed > 5) {
-                player.sendMessage(BTEGGamemode.PREFIX + "Usage: /speed <0-5>");
+                player.sendMessage(BTEGUtilities.PREFIX + "Usage: /speed <0-5>");
                 return true;
             }
 
             player.setWalkSpeed(newSpeed / 5);
             player.setFlySpeed(newSpeed / 10);
-            player.sendMessage(BTEGGamemode.PREFIX + "New speed: " + newSpeed);
+            player.sendMessage(BTEGUtilities.PREFIX + "New speed: " + newSpeed);
 
         } else {
-            player.sendMessage(BTEGGamemode.PREFIX + "Usage: /speed <0-5>");
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage: /speed <0-5>");
             return true;
         }
 

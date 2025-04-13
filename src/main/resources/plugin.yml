@@ -1,8 +1,7 @@
-name: BTEGGamemode
+name: bteg_utilities
 version: ${project.version}
-main: de.leander.bteggamemode.BTEGGamemode
+main: de.leander.bteg_utilities.BTEGUtilities
 authors: [ Leander, JaskerX ]
-description: This plugin sets users gamemode to spectator or visitor (checks for permission node) when a player joins a server.
 website: bte-germany.de
 api-version: 1.18
 depend: [PlaceholderAPI]
