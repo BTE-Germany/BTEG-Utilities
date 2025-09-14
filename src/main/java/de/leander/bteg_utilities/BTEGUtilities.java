@@ -19,7 +19,6 @@ public final class BTEGUtilities extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerJoinLeaveGamemode(), this);
         getServer().getPluginManager().registerEvents(new FadeFormEvent(), this);
         getServer().getPluginManager().registerEvents(new PlayerTeleport(), this);
-        Objects.requireNonNull(getCommand("terraform")).setExecutor(new Terraform());
         Objects.requireNonNull(getCommand("cover")).setExecutor(new CoverCommand());
         Objects.requireNonNull(getCommand("lidar")).setExecutor(new LidarCommand());
         Objects.requireNonNull(getCommand("rail")).setExecutor(new RailCommand());

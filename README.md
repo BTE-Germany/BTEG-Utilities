@@ -6,7 +6,6 @@ Developed for BTE Germany
 ### Commands 
 - /cover -> Covers all gray and light gray glass with cyan terracotta and gray wool
 - /lidar [save] -> Regens a region and pastes the surface block before the regen
-- /terraform [Height] -> Terraforms a region
 - //side [Block-ID] [Block-ID] [Direction(n,o,s,w)] -> Replaces blocks like worldedit with < but sideways
 - /speed [1-5]
 - /bteg server 1,2,5 restart [seconds,empty] -> Restarts server with countdown (needs bungeecord expansion)
@@ -23,7 +22,6 @@ Developed for BTE Germany
 - **bteg.cover**
 - **bteg.restart**
 - **bteg.lidar**
-- **bteg.terraform**
 - **bteg.side**
 - **bteg.speed**
 
