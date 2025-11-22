@@ -27,7 +27,6 @@ public final class BTEGUtilities extends JavaPlugin {
         Objects.requireNonNull(getCommand("cleanup")).setExecutor(new CleanUpCommand());
         Objects.requireNonNull(getCommand("connect")).setExecutor(new ConnectCommand());
         Objects.requireNonNull(getCommand("regionfile")).setExecutor(new RegionFileCommand());
-        Objects.requireNonNull(getCommand("norms")).setExecutor(new NormsCommand());
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         getComponentLogger().info(Component.text("Plugin enabled!", NamedTextColor.BLUE));
     }

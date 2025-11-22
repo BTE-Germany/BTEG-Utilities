@@ -50,9 +50,3 @@ commands:
     usage: /connect <Block-ID or undo>
     aliases:
       - /connect
-  norms:
-    description: Teleports you to the normen-hub
-    usage: /norms
-    aliases:
-      - normen
-      - norme
