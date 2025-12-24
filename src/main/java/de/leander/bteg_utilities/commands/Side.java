@@ -118,7 +118,7 @@ public class Side extends CommandWithBackup implements TabExecutor {
             if (plotRegion instanceof Polygonal2DRegion) {
                 // Cast WorldEdit region to polygonal region
                 this.polyRegion = (Polygonal2DRegion) plotRegion;
-                if (!player.hasPermission("bteg.advanced") && (this.polyRegion.getLength() > 500 || this.polyRegion.getWidth() > 500 || this.polyRegion.getHeight() > 200)) {
+                if (!player.hasPermission("bteg.advanced") && (this.polyRegion.getVolume() > (700 * 700 * 300))) {
                         player.sendMessage("§7§l>> §cPlease adjust your selection size!");
                         return;
                     }
