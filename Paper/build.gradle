@@ -32,7 +32,6 @@ repositories {
 dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'net.kyori:adventure-api:4.26.1'
     implementation 'com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.14.3'
     compileOnly 'com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.14.3'
 }
