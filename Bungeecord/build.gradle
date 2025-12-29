@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id "com.github.johnrengelman.shadow" version "7.0.0"
+}
+
+group = 'de.btegermany'
+version = '1.1.2'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "jitpack.io"
+        url = "https://jitpack.io"
+    }
+    maven {
+        name = "bungeecord-repo"
+        url = "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+    maven {
+        name = "codecrafter47-repo"
+        url = "https://nexus.codecrafter47.de/content/repositories/public/"
+    }
+    maven{
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+    maven {
+        url = "https://repo.glaremasters.me/repository/public"
+    }
+}
+
+dependencies {
+    compileOnly 'net.md-5:bungeecord-api:1.20-R0.1-SNAPSHOT'
+    testCompileOnly 'net.md-5:bungeecord-api:1.20-R0.1-SNAPSHOT'
+    implementation 'com.mojang:brigadier:1.2.9'
+    compileOnly 'com.github.NEZNAMY:TAB-API:5.3.2'
+    implementation 'org.json:json:20251224'
+    implementation 'commons-io:commons-io:2.21.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+def targetJavaVersion = 17
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(targetJavaVersion)
+}

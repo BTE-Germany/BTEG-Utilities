@@ -10,7 +10,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>Paper</module>
-        <module>Bungeecord</module>
     </modules>
 
     <properties>
