@@ -1,0 +1,4 @@
+portainer:
+  # if not set the env variable PORTAINER_ENVIRONMENT_ID will be used
+  environment-id:
+  access-token:

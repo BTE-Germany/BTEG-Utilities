@@ -1,0 +1,5 @@
+name: BTEGUtilities
+version: '${project.version}'
+main: de.btegermany.utilities.BTEGUtilitiesBungee
+author: JaskerX
+depends: ['TAB']

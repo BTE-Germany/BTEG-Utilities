@@ -1,0 +1,52 @@
+name: bteg_utilities
+version: ${project.version}
+main: de.btegermany.utilities.BTEGUtilities
+authors: [ Leander, JaskerX ]
+website: bte-germany.de
+api-version: 1.18
+depend: [PlaceholderAPI]
+
+commands:
+  regionfile:
+    description: Gets the region file of the current location
+    usage: /regionfile <cc>
+    aliases:
+      - rgf
+  lidar:
+    description: Saves blocks - regenerates region - replaces surfaces blocks with saved blocks
+    usage: /lidar <save>
+    aliases:
+      - /lidar
+  terraform:
+    description: Terraforms an area for you
+    usage: /terraform <Height>
+    aliases:
+      - /terraform
+  speed:
+    description: Gives you speed
+    usage: /speed <Number>
+  /side:
+    description: Replaces blocks sideways
+    usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>
+    aliases:
+      - side
+  cleanup:
+    description: Executes big worldedit command
+    usage: /cleanup
+    aliases:
+      - /cleanup
+  cover:
+    description: Covers windows with blocks
+    usage: /cover
+    aliases:
+        - /cover
+  rail:
+    description: Builds rails
+    usage: /rail <Block-ID or undo> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>
+    aliases:
+      - /rail
+  connect:
+    description: Connects blocks
+    usage: /connect <Block-ID or undo>
+    aliases:
+      - /connect
