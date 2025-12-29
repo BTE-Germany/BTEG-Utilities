@@ -8,9 +8,6 @@
     <artifactId>bteg-utilities</artifactId>
     <version>1.0</version>
     <packaging>pom</packaging>
-    <modules>
-        <module>Paper</module>
-    </modules>
 
     <properties>
         <java.version>21</java.version>
