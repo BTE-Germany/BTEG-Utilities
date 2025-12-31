@@ -2,11 +2,15 @@ package de.btegermany.utilities.commands;
 
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.function.mask.BlockMask;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.function.mask.Masks;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 
+import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockType;
 import de.btegermany.utilities.BTEGUtilities;
 import de.btegermany.utilities.util.CommandWithBackup;
@@ -23,7 +27,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,7 +34,6 @@ import static java.util.Collections.emptyList;
 
 public class Side extends CommandWithBackup implements TabExecutor {
 
-    private World world1;
     private Polygonal2DRegion polyRegion;
     private CuboidRegion cuboidRegion;
 
@@ -39,7 +41,6 @@ public class Side extends CommandWithBackup implements TabExecutor {
     private BlockType postBlock;
     private String direction;
     private boolean ignoreSameBlock;
-    private ArrayList<String> masks;
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
@@ -72,6 +73,7 @@ public class Side extends CommandWithBackup implements TabExecutor {
         this.postBlock = Converter.getBlockType(args[1].toUpperCase(), player);
 
         this.direction = args[2];
+        Mask mask = Masks.alwaysTrue();
         if (args.length >= 4) {
             if (args[3].equalsIgnoreCase("y") || args[3].equalsIgnoreCase("yes")) {
                 this.ignoreSameBlock = true;
@@ -84,23 +86,35 @@ public class Side extends CommandWithBackup implements TabExecutor {
             }
 
             if (args.length >= 5) {
-                this.masks = new ArrayList<>();
-                this.masks.addAll(Arrays.asList(args).subList(4, args.length));
+                boolean inverse = false;
+                String blocksString = args[4];
+                if (args[4].startsWith("!")) {
+                    inverse = true;
+                    blocksString = args[4].substring("!".length());
+                }
+
+                BaseBlock[] blocks = Arrays.stream(blocksString.split(","))
+                        .map(input -> new BaseBlock(Converter.getBlockType(input).getDefaultState()))
+                        .toArray(BaseBlock[]::new);
+
+                mask = new BlockMask(BukkitAdapter.adapt(player.getWorld()), blocks);
+
+                if (inverse) {
+                    mask = mask.inverse();
+                }
             }
         }
         try {
-            this.setSelection(player);
+            this.setSelection(player, mask);
         } catch (MaxChangedBlocksException | EmptyClipboardException e) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred.");
             e.printStackTrace();
         }
 
-        this.world1 = player.getWorld();
-
         return true;
     }
 
-    private void setSelection(Player player) throws MaxChangedBlocksException, EmptyClipboardException {
+    private void setSelection(Player player, Mask mask) throws MaxChangedBlocksException, EmptyClipboardException {
         Region plotRegion;
         // Get WorldEdit selection of player
         try {
@@ -133,18 +147,18 @@ public class Side extends CommandWithBackup implements TabExecutor {
             return;
         }
         if (plotRegion instanceof Polygonal2DRegion) {
-            this.replace(this.polyRegion, player);
+            this.replace(this.polyRegion, player, mask);
         } else if (plotRegion instanceof CuboidRegion) {
-            this.replace(this.cuboidRegion, player);
+            this.replace(this.cuboidRegion, player, mask);
         }
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 
     }
 
 
-    private void replace(Region region, @NotNull Player player) throws MaxChangedBlocksException, EmptyClipboardException {
+    private void replace(Region region, @NotNull Player player, Mask mask) throws MaxChangedBlocksException, EmptyClipboardException {
 
-        this.world1 = player.getWorld();
+        World world = player.getWorld();
 
         if (region instanceof Polygonal2DRegion) {
             this.saveBackup(player, this.polyRegion);
@@ -158,119 +172,69 @@ public class Side extends CommandWithBackup implements TabExecutor {
             for (int j = region.getMinimumPoint().y(); j <= region.getMaximumPoint().y(); j++) {
                 for (int k = region.getMinimumPoint().z(); k <= region.getMaximumPoint().z(); k++) {
                     if (region.contains(BlockVector3.at(i, j, k))) {
-                        Block block = this.world1.getBlockAt(i, j, k);
+                        Block block = world.getBlockAt(i, j, k);
                         if (block.getType().toString().equalsIgnoreCase(BukkitAdapter.adapt(this.preBlock).toString())) {
                             Material materialPreBlock = BukkitAdapter.adapt(this.preBlock);
                             Material materialPostBlock = BukkitAdapter.adapt(this.postBlock);
-                            if (this.masks == null) {
-                                switch (this.direction) {
-                                    case "n" -> {
-                                        if (!this.ignoreSameBlock) {
-                                            if (!this.world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
-                                                this.world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
-                                                blocks++;
-                                            }
-                                        } else {
-                                                this.world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
-                                                blocks++;
-                                        }
+                            switch (this.direction) {
+                                case "n" -> {
+                                    if (!mask.test(BlockVector3.at(i, j, k - 1))) {
+                                        continue;
                                     }
-                                    case "e" -> {
-                                        if (!this.ignoreSameBlock) {
-                                            if (!this.world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
-                                                this.world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
-
-                                                blocks++;
-                                            }
-                                        } else {
-                                            this.world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
+                                    if (!this.ignoreSameBlock) {
+                                        if (!world.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                            world.getBlockAt(i, j, k - 1).setType(materialPostBlock);
                                             blocks++;
                                         }
-                                    }
-                                    case "s" -> {
-                                        if(!this.ignoreSameBlock) {
-                                            if (!this.world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
-                                                this.world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
-                                                blocks++;
-                                            }
-                                        } else {
-                                            this.world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
+                                    } else {
+                                            world.getBlockAt(i, j, k - 1).setType(materialPostBlock);
                                             blocks++;
-                                        }
-                                    }
-                                    case "w" -> {
-                                        if(!this.ignoreSameBlock) {
-                                            if (!this.world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
-                                                this.world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
-                                                blocks++;
-                                            }
-                                        } else {
-                                            this.world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
-                                            blocks++;
-                                        }
-                                    }
-
-                                }
-                            } else {
-                                for (String mask : this.masks) {
-
-                                    switch (this.direction) {
-                                        case "n" -> {
-
-                                            if (!this.ignoreSameBlock) {
-                                                if (!this.world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && this.world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            } else {
-                                                if (this.world1.getBlockAt(i, j, k - 1).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i, j, k - 1).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            }
-                                        }
-                                        case "e" -> {
-                                            if (!this.ignoreSameBlock) {
-                                                if (!this.world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && this.world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            } else {
-                                                if (this.world1.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i + 1, j, k).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            }
-                                        }
-                                        case "s" -> {
-                                            if (!this.ignoreSameBlock) {
-                                                if (!this.world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && this.world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            } else {
-                                                if (this.world1.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i, j, k + 1).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            }
-                                        }
-                                        case "w" -> {
-                                            if (!this.ignoreSameBlock) {
-                                                if (!this.world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString()) && this.world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            } else {
-                                                if (this.world1.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(mask)) {
-                                                    this.world1.getBlockAt(i - 1, j, k).setType(materialPostBlock);
-                                                    blocks++;
-                                                }
-                                            }
-                                        }
-
                                     }
                                 }
+                                case "e" -> {
+                                    if (!mask.test(BlockVector3.at(i + 1, j, k))) {
+                                        continue;
+                                    }
+                                    if (!this.ignoreSameBlock) {
+                                        if (!world.getBlockAt(i + 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                            world.getBlockAt(i + 1, j, k).setType(materialPostBlock);
+
+                                            blocks++;
+                                        }
+                                    } else {
+                                        world.getBlockAt(i + 1, j, k).setType(materialPostBlock);
+                                        blocks++;
+                                    }
+                                }
+                                case "s" -> {
+                                    if (!mask.test(BlockVector3.at(i, j, k + 1))) {
+                                        continue;
+                                    }
+                                    if(!this.ignoreSameBlock) {
+                                        if (!world.getBlockAt(i, j, k + 1).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                            world.getBlockAt(i, j, k + 1).setType(materialPostBlock);
+                                            blocks++;
+                                        }
+                                    } else {
+                                        world.getBlockAt(i, j, k + 1).setType(materialPostBlock);
+                                        blocks++;
+                                    }
+                                }
+                                case "w" -> {
+                                    if (!mask.test(BlockVector3.at(i - 1, j, k))) {
+                                        continue;
+                                    }
+                                    if(!this.ignoreSameBlock) {
+                                        if (!world.getBlockAt(i - 1, j, k).getType().toString().equalsIgnoreCase(materialPreBlock.toString())) {
+                                            world.getBlockAt(i - 1, j, k).setType(materialPostBlock);
+                                            blocks++;
+                                        }
+                                    } else {
+                                        world.getBlockAt(i - 1, j, k).setType(materialPostBlock);
+                                        blocks++;
+                                    }
+                                }
+
                             }
                         }
                     }
@@ -279,7 +243,6 @@ public class Side extends CommandWithBackup implements TabExecutor {
         }
         player.sendMessage(BTEGUtilities.PREFIX + "Successfully replaced §6§l" + blocks + " §r§7blocks sideways!");
         this.ignoreSameBlock = false;
-        this.masks = null;
     }
 
     @Override

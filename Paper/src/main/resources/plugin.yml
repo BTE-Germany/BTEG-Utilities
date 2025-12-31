@@ -27,7 +27,7 @@ commands:
     usage: /speed <Number>
   /side:
     description: Replaces blocks sideways
-    usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask1> <Mask2> <...>
+    usage: //side <Block-ID> <Block-ID> <Direction[n,e,s,w]> <ignoreSameBlocks[y,n]> <Mask>
     aliases:
       - side
   cleanup:
