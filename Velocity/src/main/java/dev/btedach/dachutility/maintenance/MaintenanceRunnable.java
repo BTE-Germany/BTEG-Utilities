@@ -30,20 +30,20 @@ public class MaintenanceRunnable implements Runnable {
                     continue;
                 }
                 if (this.maintenance.servers().stream().anyMatch(serverMaintenance -> serverMaintenance != null && serverMaintenance.getServerInfo().getName().equals("Lobby-1"))) {
-                    player.disconnect(Component.text(Constants.prefix + "Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD));
+                    player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                     continue;
                 }
 
                 Optional<RegisteredServer> lobbyServerOptional = DACHUtility.getInstance().getServer().getServer("Lobby-1");
                 if (lobbyServerOptional.isEmpty()) {
-                    player.disconnect(Component.text(Constants.prefix + "Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD));
+                    player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                     return;
                 }
                 RegisteredServer lobbyServer = lobbyServerOptional.get();
 
                 lobbyServer.ping().orTimeout(1, TimeUnit.SECONDS)
                         .exceptionally(throwable -> {
-                            player.disconnect(Component.text(Constants.prefix + "Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD));
+                            player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                             return null;
                         })
                         .thenAccept(pingResult -> {
@@ -51,7 +51,7 @@ public class MaintenanceRunnable implements Runnable {
                                 return;
                             }
 
-                            player.sendMessage(Component.text(Constants.prefix + "Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD));
+                            player.sendMessage(Constants.prefixComponent.append(Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD)));
 
                             player.createConnectionRequest(lobbyServer).connect();
                         });

@@ -19,14 +19,14 @@ public class PlotsCommand implements SimpleCommand {
 
         Optional<RegisteredServer> plotServerOptional = DACHUtility.getInstance().getServer().getServer("Plot-1");
         if (plotServerOptional.isEmpty()) {
-            player.sendMessage(Component.text(Constants.prefix + " Der Plotserver ist gerade nicht verfügbar.", NamedTextColor.RED));
+            player.sendMessage(Constants.prefixComponent.append(Component.text("Der Plotserver ist gerade nicht verfügbar.", NamedTextColor.RED)));
             return;
         }
         RegisteredServer plotServer = plotServerOptional.get();
 
         plotServer.ping().orTimeout(1, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    player.sendMessage(Component.text(Constants.prefix + " Server " + plotServer.getServerInfo().getName() + " is offline.", NamedTextColor.RED));
+                    player.sendMessage(Constants.prefixComponent.append(Component.text("Server " + plotServer.getServerInfo().getName() + " is offline.", NamedTextColor.RED)));
                     return null;
                 })
                 .thenAccept(pingResult -> {
@@ -34,7 +34,7 @@ public class PlotsCommand implements SimpleCommand {
                         return;
                     }
 
-                    player.sendMessage(Component.text(Constants.prefix + " Verbinde zum Plotserver.", NamedTextColor.GOLD));
+                    player.sendMessage(Constants.prefixComponent.append(Component.text("Verbinde zum Plotserver.", NamedTextColor.GOLD)));
 
                     player.createConnectionRequest(plotServer).connect();
                 });

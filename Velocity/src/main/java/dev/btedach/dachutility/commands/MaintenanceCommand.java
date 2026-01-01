@@ -34,11 +34,11 @@ public class MaintenanceCommand implements SimpleCommand {
 
         switch (args.length) {
             case 1 -> {
-                player.sendMessage(Component.text(Constants.prefix + " Nutze den Command folgendermaßen:", NamedTextColor.GOLD));
-                player.sendMessage(Component.text(Constants.prefix + " /maintenance add", NamedTextColor.GOLD)
-                        .append(Component.text(" [name] [server] [date (z.B. 1.2.2034)] [time (z.B. 12:34)]", NamedTextColor.RED)));
-                player.sendMessage(Component.text(Constants.prefix + " /maintenance cancel", NamedTextColor.GOLD)
-                        .append(Component.text(" [name]", NamedTextColor.RED)));
+                player.sendMessage(Constants.prefixComponent.append(Component.text("Nutze den Command folgendermaßen:", NamedTextColor.GOLD)));
+                player.sendMessage(Constants.prefixComponent.append(Component.text("/maintenance add", NamedTextColor.GOLD)
+                        .append(Component.text(" [name] [server] [date (z.B. 1.2.2034)] [time (z.B. 12:34)]", NamedTextColor.RED))));
+                player.sendMessage(Constants.prefixComponent.append(Component.text("/maintenance cancel", NamedTextColor.GOLD)
+                        .append(Component.text(" [name]", NamedTextColor.RED))));
             }
             case 2 -> {
                 if(!args[0].equalsIgnoreCase("cancel")) {
@@ -48,14 +48,14 @@ public class MaintenanceCommand implements SimpleCommand {
                 }
                 String name = args[1];
                 if(!this.maintenancesRegistry.getMaintenances().containsKey(name)) {
-                    player.sendMessage(Component.text(Constants.prefix + " Es gibt keine Wartungsarbeiten mit diesem Namen!", NamedTextColor.GOLD));
+                    player.sendMessage(Constants.prefixComponent.append(Component.text("Es gibt keine Wartungsarbeiten mit diesem Namen!", NamedTextColor.GOLD)));
                     return;
                 }
                 if(this.maintenancesRegistry.getMaintenances().get(name).proxy()) {
                     DACHUtility.getInstance().getServer().getCommandManager().executeAsync(DACHUtility.getInstance().getServer().getConsoleCommandSource(), "cloudnet syncproxy target Proxy maintenance false");
                 }
                 this.maintenancesRegistry.unregister(name);
-                player.sendMessage(Component.text(Constants.prefix + " " + args[1], NamedTextColor.RED).append(Component.text(" wurde entfernt!", NamedTextColor.GOLD)));
+                player.sendMessage(Constants.prefixComponent.append(Component.text(args[1], NamedTextColor.RED).append(Component.text(" wurde entfernt!", NamedTextColor.GOLD))));
             }
             case 5 -> {
                 if(!args[0].equalsIgnoreCase("add")) {
@@ -65,7 +65,7 @@ public class MaintenanceCommand implements SimpleCommand {
                 }
                 String name = args[1];
                 if(this.maintenancesRegistry.getMaintenances().containsKey(name)) {
-                    player.sendMessage(Component.text(Constants.prefix + " Es gibt bereits Wartungsarbeiten mit diesem Namen!", NamedTextColor.RED));
+                    player.sendMessage(Constants.prefixComponent.append(Component.text("Es gibt bereits Wartungsarbeiten mit diesem Namen!", NamedTextColor.RED)));
                     return;
                 }
 
@@ -83,7 +83,7 @@ public class MaintenanceCommand implements SimpleCommand {
                 ).atZone(ZoneId.of("Europe/Berlin")), proxy);
                 servers.removeIf(Objects::isNull);
                 this.maintenancesRegistry.register(maintenance);
-                player.sendMessage(Component.text(Constants.prefix + " " + args[1], NamedTextColor.RED).append(Component.text(" wurde gespeichert!", NamedTextColor.GOLD)));
+                player.sendMessage(Constants.prefixComponent.append(Component.text(args[1], NamedTextColor.RED).append(Component.text(" wurde gespeichert!", NamedTextColor.GOLD))));
             }
         }
     }
