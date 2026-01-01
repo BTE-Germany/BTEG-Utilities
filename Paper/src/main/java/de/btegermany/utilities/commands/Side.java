@@ -94,7 +94,7 @@ public class Side extends CommandWithBackup implements TabExecutor {
                 }
 
                 BaseBlock[] blocks = Arrays.stream(blocksString.split(","))
-                        .map(input -> new BaseBlock(Converter.getBlockType(input).getDefaultState()))
+                        .map(input -> new BaseBlock(Converter.getBlockType(input, player).getDefaultState()))
                         .toArray(BaseBlock[]::new);
 
                 mask = new BlockMask(BukkitAdapter.adapt(player.getWorld()), blocks);
@@ -252,7 +252,19 @@ public class Side extends CommandWithBackup implements TabExecutor {
         }
         // First argument: target
         if (args.length == 1 || args.length == 2) {
-            return TabUtil.getMaterialBlocks(args[args.length-1], true);
+            return TabUtil.getMaterialBlocks(args[args.length - 1], true);
+        }
+
+        if ((args.length == 3 || args.length == 4) && args[args.length - 1].isEmpty()) {
+            return List.of("y", "n");
+        }
+
+        if (args.length == 5) {
+            int lastIndex = args[4].lastIndexOf(",") + 1;
+            if (lastIndex == 0) {
+                lastIndex += args[4].startsWith("!") ? 1 : 0;
+            }
+            return TabUtil.getMaterialBlocks(args[4].substring(lastIndex), args[4].substring(0, lastIndex), true);
         }
 
         return emptyList();

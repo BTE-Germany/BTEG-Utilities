@@ -23,6 +23,10 @@ public class TabUtil {
                 .toList();
     }
 
+    public static List<String> getMaterialBlocks(String arg, String startOfArg, boolean hand) {
+        return getMaterialBlocks(arg, hand).stream().map(block -> startOfArg + block).toList();
+    }
+
     public static List<String> getWallBlocks(String arg) {
         return MaterialSetTag.WALLS.getValues().stream()
                 .map(material -> material.toString().toLowerCase())
