@@ -25,6 +25,9 @@ repositories {
     maven{
         url "https://ci.frostcast.net/plugin/repository/everything"
     }
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
 }
 
 dependencies {
@@ -36,6 +39,7 @@ dependencies {
     implementation("net.dv8tion:JDA:5.0.0-alpha.19")
     compileOnly('org.projectlombok:lombok:1.18.30')
     annotationProcessor('org.projectlombok:lombok:1.18.30')
+    compileOnly 'com.github.NEZNAMY:TAB-API:5.4.0'
 }
 
 def targetJavaVersion = 17

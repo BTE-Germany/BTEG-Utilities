@@ -7,6 +7,7 @@ import dev.btedach.dachutility.utils.Constants;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -21,15 +22,19 @@ public class MaintenanceRunnable implements Runnable {
     @Override
     public void run() {
         if (this.maintenance.proxy()) {
-            DACHUtility.getInstance().getServer().getCommandManager().executeAsync(DACHUtility.getInstance().getServer().getConsoleCommandSource(), "cloudnet syncproxy target Proxy maintenance true");
+            this.sendToLobbyOrDisconnect(DACHUtility.getInstance().getServer().getAllServers());
         }
 
-        for (RegisteredServer server : this.maintenance.servers()) {
+        this.sendToLobbyOrDisconnect(this.maintenance.servers());
+    }
+
+    private void sendToLobbyOrDisconnect(Collection<RegisteredServer> servers) {
+        for (RegisteredServer server : servers) {
             for (Player player : server.getPlayersConnected()) {
                 if (player.hasPermission("bteg.maintenance.join")) {
                     continue;
                 }
-                if (this.maintenance.servers().stream().anyMatch(serverMaintenance -> serverMaintenance != null && serverMaintenance.getServerInfo().getName().equals("Lobby-1"))) {
+                if (servers.stream().anyMatch(serverMaintenance -> serverMaintenance != null && serverMaintenance.getServerInfo().getName().equalsIgnoreCase("Lobby-1"))) {
                     player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                     continue;
                 }

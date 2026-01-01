@@ -76,6 +76,7 @@ public class MaintenancesRegistry {
             Maintenance maintenance = new Maintenance(name, servers, time, proxy);
             this.maintenances.put(name, maintenance);
         }
+        this.plugin.scheduleMaintenances(this);
     }
 
     public void register(Maintenance maintenance) {
