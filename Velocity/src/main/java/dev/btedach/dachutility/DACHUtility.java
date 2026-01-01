@@ -28,6 +28,7 @@ import net.luckperms.api.LuckPermsProvider;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Plugin(id = "dach-utility", name = "DACH-Utility", version = "1.0.0-SNAPSHOT", description = "Proxy plugin for BTEG X BTE Alps", url = "https://buildthe.earth/dach", authors = {"Dev Team of BTEG and BTE Alps"})
 public class DACHUtility {
@@ -62,7 +63,12 @@ public class DACHUtility {
     @Getter
     private LuckPerms luckPerms;
 
+    private  MaintenancesRegistry maintenancesRegistry;
 
+    private ScheduledExecutorService scheduledExecutorServiceMaintenance;
+
+    //TODO: placeholder, daily restart
+    //TODO: test commands executed by plugin
     @Inject
     public DACHUtility(ProxyServer server, Logger logger, CommandManager commandManager) throws IOException {
         this.server = server;
@@ -70,6 +76,9 @@ public class DACHUtility {
         instance = this;
         logger.info("Starting DACH Utility");
         this.fileManager = new FileManager();
+
+        this.maintenancesRegistry = new MaintenancesRegistry(this, dataDirectoryPath, "maintenances.json");
+        this.maintenancesRegistry.loadMaintenances();
 
         getFileManager().checkConfigFiles();
 
@@ -143,5 +152,7 @@ public class DACHUtility {
         commandManager.register(commandManager.metaBuilder("sc").build(), new StaffChat());
         commandManager.register(commandManager.metaBuilder("tc").build(), new ToggelChat());
         commandManager.register(commandManager.metaBuilder("tdc").build(), new ToggelDcChat());
+        commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.server));
+        commandManager.register(commandManager.metaBuilder("plotsystem").build(), new PlotsCommand());
     }
 }
