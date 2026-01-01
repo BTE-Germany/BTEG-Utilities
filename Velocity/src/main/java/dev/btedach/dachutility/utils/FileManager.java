@@ -57,7 +57,7 @@ public final class FileManager {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] s = line.split("=");
-                if(s[0].toLowerCase().startsWith(config)){
+                if(s[0].toLowerCase().startsWith(config.toLowerCase())){
                     return s[1];
                 }
             }

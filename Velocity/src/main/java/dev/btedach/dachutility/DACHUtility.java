@@ -11,10 +11,17 @@ import dev.btedach.dachutility.commands.*;
 import dev.btedach.dachutility.implementation.LuckPermsAPI;
 import dev.btedach.dachutility.listener.ChangeServerListener;
 import dev.btedach.dachutility.listener.DisconnectListener;
+import dev.btedach.dachutility.listener.JDAChatListener;
 import dev.btedach.dachutility.listener.JoinListener;
 import dev.btedach.dachutility.utils.FileManager;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.kyori.adventure.text.Component;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -52,6 +59,7 @@ public class DACHUtility {
     @Getter
     private LuckPermsAPI luckPermsHook;
 
+    @Getter
     private LuckPerms luckPerms;
 
 
@@ -79,6 +87,22 @@ public class DACHUtility {
             return;
         }
 
+        JDABuilder builder = JDABuilder.createDefault((String) getFileManager().fetchStringFromConfig(FileManager.FILETYPE.CONFIG, "token"));
+
+        builder.addEventListeners(new JDAChatListener(this));
+
+        builder.setStatus(OnlineStatus.ONLINE);
+        builder.setChunkingFilter(ChunkingFilter.ALL);
+        builder.enableIntents(GatewayIntent.GUILD_PRESENCES);
+        builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
+        builder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
+        builder.enableCache(CacheFlag.ACTIVITY);
+        builder.enableCache(CacheFlag.ONLINE_STATUS);
+        builder.setMemberCachePolicy(MemberCachePolicy.ALL);
+        builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
+
+        jda = builder.build();
+
         registerCommands(commandManager);
 
         logger.info("Loading LuckPerms API");
@@ -94,38 +118,6 @@ public class DACHUtility {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         registerListener();
-    }
-
-    public static DACHUtility getInstance() {
-        return instance;
-    }
-
-    public Logger getLogger() {
-        return logger;
-    }
-
-    public ProxyServer getServer() {
-        return server;
-    }
-
-    public LuckPermsAPI getLuckPermsHook() {
-        return luckPermsHook;
-    }
-
-    public FileManager getFileManager() {
-        return fileManager;
-    }
-
-    public LuckPerms getLuckPerms() {
-        return luckPerms;
-    }
-
-    public long getMainServerID() {
-        return mainServerID;
-    }
-
-    public long getAllChannelID() {
-        return allChannelID;
     }
 
     private void registerListener(){
