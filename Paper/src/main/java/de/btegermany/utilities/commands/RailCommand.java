@@ -76,10 +76,10 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
         Direction playerDirection = this.getDirection(player);
         String anvils;
         if (playerDirection.isHorizontal()) {
-            player.chat("//side " + args[0] + " air n y");
+            player.chat("//side " + args[0] + " air n n");
             anvils = "anvil:1";
         } else {
-            player.chat("//side " + args[0] + " air e y");
+            player.chat("//side " + args[0] + " air e n");
             anvils = "anvil";
         }
 
@@ -88,24 +88,35 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
         }
 
         String[] placeholderBlocks = new String[] {"light_gray_glazed_terracotta", "red_glazed_terracotta", middleBlockType.toString(), "yellow_glazed_terracotta", "cyan_glazed_terracotta"};
+        String duplicatePlaceholder = "brown_glazed_terracotta";
         if (playerDirection.isHorizontal()) {
             player.chat(String.format("//side %s %s n", placeholderBlocks[2], placeholderBlocks[1]));
             player.chat(String.format("//side %s %s s", placeholderBlocks[2], placeholderBlocks[3]));
 
+            player.chat(String.format("//side %s %s n y %s", placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[2]));
+            player.chat(String.format("//side %s %s s y %s", duplicatePlaceholder, duplicatePlaceholder, placeholderBlocks[2]));
+
             if (!inGround) {
-                player.chat(String.format("//side %s %s n", placeholderBlocks[1], placeholderBlocks[0]));
-                player.chat(String.format("//side %s %s s", placeholderBlocks[3], placeholderBlocks[4]));
+                player.chat(String.format("//side %s %s n y !%s,%s,%s", placeholderBlocks[1], placeholderBlocks[0], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[3]));
+                player.chat(String.format("//side %s %s s y !%s,%s,%s,%s", placeholderBlocks[3], placeholderBlocks[4], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[1], placeholderBlocks[0]));
+                // full width sleepers for 1 block distance between anvils instead of one-sided
+                player.chat(String.format("//side %s %s s y %s", placeholderBlocks[3], placeholderBlocks[2], placeholderBlocks[0]));
             }
         } else {
             player.chat(String.format("//side %s %s w", placeholderBlocks[2], placeholderBlocks[1]));
             player.chat(String.format("//side %s %s e", placeholderBlocks[2], placeholderBlocks[3]));
 
+            player.chat(String.format("//side %s %s w y %s", placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[2]));
+            player.chat(String.format("//side %s %s e y %s", duplicatePlaceholder, duplicatePlaceholder, placeholderBlocks[2]));
+
             if (!inGround) {
-                player.chat(String.format("//side %s %s w", placeholderBlocks[1], placeholderBlocks[0]));
-                player.chat(String.format("//side %s %s e", placeholderBlocks[3], placeholderBlocks[4]));
+                player.chat(String.format("//side %s %s w y !%s,%s,%s", placeholderBlocks[1], placeholderBlocks[0], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[3]));
+                player.chat(String.format("//side %s %s e y !%s,%s,%s,%s", placeholderBlocks[3], placeholderBlocks[4], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[1], placeholderBlocks[0]));
+                // full width sleepers for 1 block distance between anvils instead of one-sided
+                player.chat(String.format("//side %s %s e y %s", placeholderBlocks[3], placeholderBlocks[2], placeholderBlocks[0]));
             }
         }
-        player.chat(String.format("//re %s,%s " + anvils, placeholderBlocks[1], placeholderBlocks[3]));
+        player.chat(String.format("//re %s,%s,%s %s", placeholderBlocks[1], placeholderBlocks[3], duplicatePlaceholder, anvils));
 
         if (!inGround) {
             if (playerDirection.isHorizontal()) {
