@@ -5,6 +5,7 @@ import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -41,7 +42,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-@Plugin(id = "dach-utility", name = "DACH-Utility", version = "1.0.0-SNAPSHOT", description = "Proxy plugin for BTEG X BTE Alps", url = "https://buildthe.earth/dach", authors = {"Dev Team of BTEG and BTE Alps"})
+@Plugin(
+        id = "dach-utility",
+        name = "DACH-Utility",
+        version = "1.0.0-SNAPSHOT",
+        description = "Proxy plugin for BTEG X BTE Alps",
+        url = "https://buildthe.earth/dach",
+        dependencies = {
+                @Dependency(id = "luckperms")
+        },
+        authors = {"Dev Team of BTEG and BTE Alps"}
+)
 public class DACHUtility {
 
     @Getter
@@ -124,7 +135,10 @@ public class DACHUtility {
         jda = builder.build();
 
         registerCommands(commandManager);
+    }
 
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
         logger.info("Loading LuckPerms API");
         try{
             luckPerms = LuckPermsProvider.get();
@@ -133,10 +147,7 @@ public class DACHUtility {
         }catch (Exception exception){
             logger.error("Failed to load LuckPerms API. {}", exception.getMessage());
         }
-    }
 
-    @Subscribe
-    public void onProxyInitialization(ProxyInitializeEvent event) {
         registerListener();
     }
 
