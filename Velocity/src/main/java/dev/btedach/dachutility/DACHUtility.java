@@ -6,6 +6,7 @@ import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.btedach.dachutility.commands.*;
 import dev.btedach.dachutility.implementation.LuckPermsAPI;
@@ -13,6 +14,9 @@ import dev.btedach.dachutility.listener.ChangeServerListener;
 import dev.btedach.dachutility.listener.DisconnectListener;
 import dev.btedach.dachutility.listener.JDAChatListener;
 import dev.btedach.dachutility.listener.JoinListener;
+import dev.btedach.dachutility.maintenance.Maintenance;
+import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
+import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.utils.FileManager;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
@@ -28,16 +32,23 @@ import net.luckperms.api.LuckPermsProvider;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Plugin(id = "dach-utility", name = "DACH-Utility", version = "1.0.0-SNAPSHOT", description = "Proxy plugin for BTEG X BTE Alps", url = "https://buildthe.earth/dach", authors = {"Dev Team of BTEG and BTE Alps"})
 public class DACHUtility {
 
     @Getter
     @Inject
-    private Logger logger;
+    private final Logger logger;
     @Getter
-    private ProxyServer server;
+    private final ProxyServer server;
 
     @Getter
     public static DACHUtility instance;
@@ -55,7 +66,7 @@ public class DACHUtility {
     public int  playerCount;
 
     @Getter
-    private FileManager fileManager;
+    private final FileManager fileManager;
 
     @Getter
     private LuckPermsAPI luckPermsHook;
@@ -63,14 +74,14 @@ public class DACHUtility {
     @Getter
     private LuckPerms luckPerms;
 
-    private  MaintenancesRegistry maintenancesRegistry;
+    private final MaintenancesRegistry maintenancesRegistry;
 
     private ScheduledExecutorService scheduledExecutorServiceMaintenance;
 
-    //TODO: placeholder, daily restart
+    //TODO: placeholder
     //TODO: test commands executed by plugin
     @Inject
-    public DACHUtility(ProxyServer server, Logger logger, CommandManager commandManager) throws IOException {
+    public DACHUtility(ProxyServer server, Logger logger, CommandManager commandManager, @DataDirectory Path dataDirectoryPath) throws IOException {
         this.server = server;
         this.logger = logger;
         instance = this;
@@ -154,5 +165,18 @@ public class DACHUtility {
         commandManager.register(commandManager.metaBuilder("tdc").build(), new ToggelDcChat());
         commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.server));
         commandManager.register(commandManager.metaBuilder("plotsystem").build(), new PlotsCommand());
+    }
+
+    public void scheduleMaintenances(MaintenancesRegistry maintenancesRegistry) {
+        if(this.scheduledExecutorServiceMaintenance != null) {
+            this.scheduledExecutorServiceMaintenance.shutdownNow();
+        }
+        this.scheduledExecutorServiceMaintenance = new ScheduledThreadPoolExecutor(maintenancesRegistry.getMaintenances().size());
+
+        for(Maintenance maintenance : maintenancesRegistry.getMaintenances().values()) {
+            ZonedDateTime now = LocalDateTime.now(ZoneId.of("Europe/Berlin")).atZone(ZoneId.of("Europe/Berlin"));
+            long delay = ChronoUnit.MILLIS.between(now, maintenance.time());
+            this.scheduledExecutorServiceMaintenance.schedule(new MaintenanceRunnable(maintenance), delay, TimeUnit.MILLISECONDS);
+        }
     }
 }
