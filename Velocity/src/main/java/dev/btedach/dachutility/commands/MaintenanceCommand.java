@@ -2,7 +2,6 @@ package dev.btedach.dachutility.commands;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
-import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import dev.btedach.dachutility.DACHUtility;
@@ -89,7 +88,7 @@ public class MaintenanceCommand implements SimpleCommand {
                         continue;
                     }
                     server.getPlayersConnected().forEach(player -> {
-                        player.sendMessage(Constants.prefixComponent.append(Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD).append(Component.text(" %s um %s | %s".formatted(dateFormatted, timeFormatted, maintenance.name()), NamedTextColor.RED))));
+                        player.sendMessage(Constants.prefixComponent.append(Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD).append(Component.text(" %s um %s, %s".formatted(dateFormatted, timeFormatted, maintenance.name()), NamedTextColor.RED))));
                     });
                 }
             }

@@ -6,7 +6,6 @@ import com.velocitypowered.api.proxy.Player;
 import dev.btedach.dachutility.DACHUtility;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.luckperms.api.platform.Platform;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,7 +18,7 @@ public class MSG implements SimpleCommand {
     @Override
     public void execute(Invocation invocation) {
         CommandSource source = invocation.source();
-        String args[] = invocation.arguments();
+        String[] args = invocation.arguments();
 
         if(source instanceof Player player){
             if(args.length >= 2){

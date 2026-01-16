@@ -12,28 +12,15 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.btedach.dachutility.commands.*;
-import dev.btedach.dachutility.implementation.LuckPermsAPI;
 import dev.btedach.dachutility.listener.ChangeServerListener;
 import dev.btedach.dachutility.listener.DisconnectListener;
-import dev.btedach.dachutility.listener.JDAChatListener;
 import dev.btedach.dachutility.listener.JoinListener;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
-import dev.btedach.dachutility.utils.FileManager;
 import lombok.Getter;
 import me.neznamy.tab.api.TabAPI;
 import me.neznamy.tab.api.TabPlayer;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.OnlineStatus;
-import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.ChunkingFilter;
-import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import net.kyori.adventure.text.Component;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.LuckPermsProvider;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -56,7 +43,6 @@ import java.util.function.Function;
         url = "https://buildthe.earth/dach",
         authors = {"Dev Team of BTEG and BTE Alps"},
         dependencies = {
-                @Dependency(id = "luckperms"),
                 @Dependency(id = "tab")
         }
 )
@@ -71,26 +57,7 @@ public class DACHUtility {
     @Getter
     public static DACHUtility instance;
 
-    public JDA jda;
-
-    @Getter
-    public long mainServerID;
-
-    @Getter
-    public long allChannelID;
-
-    @Getter
-    public long builderChatID;
     public int  playerCount;
-
-    @Getter
-    private final FileManager fileManager;
-
-    @Getter
-    private LuckPermsAPI luckPermsHook;
-
-    @Getter
-    private LuckPerms luckPerms;
 
     private final MaintenancesRegistry maintenancesRegistry;
 
@@ -102,57 +69,15 @@ public class DACHUtility {
         this.logger = logger;
         instance = this;
         logger.info("Starting DACH Utility");
-        this.fileManager = new FileManager();
 
         this.maintenancesRegistry = new MaintenancesRegistry(this, dataDirectoryPath, "maintenances.json");
         this.maintenancesRegistry.loadMaintenances();
-
-        getFileManager().checkConfigFiles();
-
-        try {
-            getLogger().info("Try to load Channel and Server ID´s");
-            mainServerID = Long.parseLong(String.valueOf(getFileManager().fetchStringFromConfig(FileManager.FILETYPE.CONFIG, "mainServerID")));
-            allChannelID = Long.parseLong(String.valueOf(getFileManager().fetchStringFromConfig(FileManager.FILETYPE.CONFIG, "allChannelID")));
-            builderChatID = Long.parseLong(String.valueOf(getFileManager().fetchStringFromConfig(FileManager.FILETYPE.CONFIG, "builderChatID")));
-            getLogger().info("Successfully loaded all Channel and Server ID´s");
-        } catch (NumberFormatException e) {
-            getLogger().error("Could not load ServerID/ChannelID because of: {}", e.getMessage());
-            getLogger().error("Check your config.yml for any mistakes;");
-            getLogger().error("Stopping the Server!");
-            DACHUtility.getInstance().getServer().shutdown(Component.text("MessageBridge - Could not load ServerID/ChannelID because of " + e.getMessage()));
-            return;
-        }
-
-        JDABuilder builder = JDABuilder.createDefault((String) getFileManager().fetchStringFromConfig(FileManager.FILETYPE.CONFIG, "token"));
-
-        builder.addEventListeners(new JDAChatListener(this));
-
-        builder.setStatus(OnlineStatus.ONLINE);
-        builder.setChunkingFilter(ChunkingFilter.ALL);
-        builder.enableIntents(GatewayIntent.GUILD_PRESENCES);
-        builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
-        builder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
-        builder.enableCache(CacheFlag.ACTIVITY);
-        builder.enableCache(CacheFlag.ONLINE_STATUS);
-        builder.setMemberCachePolicy(MemberCachePolicy.ALL);
-        builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
-
-        jda = builder.build();
 
         registerCommands(commandManager);
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        logger.info("Loading LuckPerms API");
-        try{
-            luckPerms = LuckPermsProvider.get();
-            luckPermsHook = new LuckPermsAPI(this);
-            logger.info("Loaded LuckPerms API successfully");
-        }catch (Exception exception){
-            logger.error("Failed to load LuckPerms API. {}", exception.getMessage());
-        }
-
         registerListener();
 
         Function<TabPlayer, String> placeholderFunction = tabPlayer -> {
@@ -178,7 +103,7 @@ public class DACHUtility {
             return builder.toString();
         };
 
-        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%maintenances-display%", 1000, placeholderFunction);
+        TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%maintenances-display%", 3000, placeholderFunction);
     }
 
     private void registerListener(){
