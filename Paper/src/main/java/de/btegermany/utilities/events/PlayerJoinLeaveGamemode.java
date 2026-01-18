@@ -1,7 +1,6 @@
 package de.btegermany.utilities.events;
 
 import de.btegermany.utilities.BTEGUtilities;
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -19,7 +18,6 @@ public class PlayerJoinLeaveGamemode implements Listener {
     @EventHandler
     public static void onPlayerJoin(@NotNull PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        event.joinMessage(Component.text(BTEGUtilities.PREFIX).append(player.displayName().append(Component.text(" switched to ")).append(Component.text(PlaceholderAPI.setPlaceholders(player, "%server_name%")).color(NamedTextColor.GREEN)).color(NamedTextColor.GRAY)));
 
         if (player.hasPermission("bteg.builder")) {
             player.sendMessage(BTEGUtilities.PREFIX + "Gamemode set to creative!");
@@ -36,7 +34,6 @@ public class PlayerJoinLeaveGamemode implements Listener {
     @EventHandler
     public static void onPlayerQuit(@NotNull PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        event.quitMessage(Component.text(BTEGUtilities.PREFIX).append(player.displayName().append(Component.text(" switched to another server"))).color(NamedTextColor.GRAY));
         player.setWalkSpeed(0.2F);
         player.setFlySpeed(0.1F);
     }
