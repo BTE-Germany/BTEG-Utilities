@@ -113,7 +113,7 @@ public class DACHUtility {
     public void registerCommands(CommandManager commandManager){
         commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new Discord());
         commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
-        commandManager.register(commandManager.metaBuilder("report").build(), new Report());
+        //commandManager.register(commandManager.metaBuilder("report").build(), new Report()); Currently broken/not fully implemented
         commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.server));
         commandManager.register(commandManager.metaBuilder("plotsystem").build(), new PlotsCommand());
     }
