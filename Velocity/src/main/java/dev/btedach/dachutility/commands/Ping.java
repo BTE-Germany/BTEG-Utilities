@@ -14,7 +14,7 @@ public class Ping implements SimpleCommand {
     @Override
     public void execute(Invocation invocation) {
         CommandSource source = invocation.source();
-        String args[] = invocation.arguments();
+        String[] args = invocation.arguments();
 
         if (source instanceof Player player) {
             if(args.length == 0){

@@ -13,8 +13,6 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.btedach.dachutility.commands.*;
 import dev.btedach.dachutility.listener.ChangeServerListener;
-import dev.btedach.dachutility.listener.DisconnectListener;
-import dev.btedach.dachutility.listener.JoinListener;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
@@ -108,27 +106,14 @@ public class DACHUtility {
 
     private void registerListener(){
         EventManager eventManager = server.getEventManager();
-        eventManager.register(this, new JoinListener());
         eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry));
-        eventManager.register(this, new DisconnectListener());
 
     }
 
     public void registerCommands(CommandManager commandManager){
-        commandManager.register(commandManager.metaBuilder("bc").build(), new BuilderChat());
-        commandManager.register(commandManager.metaBuilder("cp").build(), new CheckPerm());
-        commandManager.register(commandManager.metaBuilder("dc").build(), new Discord());
-        commandManager.register(commandManager.metaBuilder("discord").build(), new Discord());
-        commandManager.register(commandManager.metaBuilder("msg").build(), new MSG());
-        commandManager.register(commandManager.metaBuilder("write").build(), new MSG());
-        commandManager.register(commandManager.metaBuilder("w").build(), new MSG());
+        commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new Discord());
         commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
-        commandManager.register(commandManager.metaBuilder("r").build(), new Reply());
-        commandManager.register(commandManager.metaBuilder("reply").build(), new Reply());
         commandManager.register(commandManager.metaBuilder("report").build(), new Report());
-        commandManager.register(commandManager.metaBuilder("sc").build(), new StaffChat());
-        commandManager.register(commandManager.metaBuilder("tc").build(), new ToggelChat());
-        commandManager.register(commandManager.metaBuilder("tdc").build(), new ToggelDcChat());
         commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.server));
         commandManager.register(commandManager.metaBuilder("plotsystem").build(), new PlotsCommand());
     }
