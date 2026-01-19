@@ -64,11 +64,12 @@ public class MaintenanceCommand implements SimpleCommand {
                     return;
                 }
 
-                Set<RegisteredServer> servers = new HashSet<>(Servers.fromInput(args[2].split(",")).values());
+                Map<String, RegisteredServer> serversInput = Servers.fromInput(args[2].split(","));
+                Set<RegisteredServer> servers = new HashSet<>(serversInput.values());
                 String[] date = args[3].split("\\.");
                 String[] time = args[4].split(":");
 
-                boolean proxy = servers.stream().anyMatch(Objects::isNull);
+                boolean proxy = serversInput.containsKey("Proxy-1");
                 Maintenance maintenance = new Maintenance(name, servers, LocalDateTime.of(
                         Integer.parseInt(date[2]),
                         Integer.parseInt(date[1]),

@@ -5,6 +5,7 @@ import dev.btedach.dachutility.DACHUtility;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class Servers {
 
@@ -28,8 +29,9 @@ public class Servers {
             String[] filters = new String[] {serverName + "-1", "Terra-" + serverName};
 
             for(String f : filters) {
-                if(servers.containsKey(f)) {
-                    serversRes.put(f, servers.get(f));
+                Optional <Map.Entry<String, RegisteredServer>> terraServerOptional = servers.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(f)).findFirst();
+                if(terraServerOptional.isPresent()) {
+                    serversRes.put(terraServerOptional.get().getKey(), terraServerOptional.get().getValue());
                 } else if(f.equals("Proxy-1")) {
                     serversRes.put(f, null);
                 }
@@ -45,9 +47,9 @@ public class Servers {
                     end = temp;
                 }
                 for(int i = start; i <= end; i++) {
-                    if(servers.containsKey("Terra-" + i)) {
-                        serversRes.put("Terra-" + i, servers.get("Terra-" + i));
-                    }
+                    int finalI = i;
+                    Optional <Map.Entry<String, RegisteredServer>> serverOptional = servers.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase("Terra-" + finalI)).findFirst();
+                    serverOptional.ifPresent(server -> serversRes.put(server.getKey(), server.getValue()));
                 }
 
             }
