@@ -83,7 +83,7 @@ public class MaintenanceCommand implements SimpleCommand {
 
                 String dateFormatted = DACHUtility.convertDate(maintenance.time().getYear(), maintenance.time().getMonthValue(), maintenance.time().getDayOfMonth());
                 String timeFormatted = maintenance.time().getHour() + ":" + (maintenance.time().getMinute() < 10 ? "0" : "") + maintenance.time().getMinute();
-                for (RegisteredServer server : DACHUtility.getInstance().getServer().getAllServers()) {
+                for (RegisteredServer server : DACHUtility.getInstance().getProxy().getAllServers()) {
                     if (!proxy && !servers.contains(server)) {
                         continue;
                     }

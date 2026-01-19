@@ -22,7 +22,7 @@ public class MaintenanceRunnable implements Runnable {
     @Override
     public void run() {
         if (this.maintenance.proxy()) {
-            this.sendToLobbyOrDisconnect(DACHUtility.getInstance().getServer().getAllServers());
+            this.sendToLobbyOrDisconnect(DACHUtility.getInstance().getProxy().getAllServers());
         }
 
         this.sendToLobbyOrDisconnect(this.maintenance.servers());
@@ -39,7 +39,7 @@ public class MaintenanceRunnable implements Runnable {
                     continue;
                 }
 
-                Optional<RegisteredServer> lobbyServerOptional = DACHUtility.getInstance().getServer().getServer("Lobby-1");
+                Optional<RegisteredServer> lobbyServerOptional = DACHUtility.getInstance().getProxy().getServer("Lobby-1");
                 if (lobbyServerOptional.isEmpty()) {
                     player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                     return;

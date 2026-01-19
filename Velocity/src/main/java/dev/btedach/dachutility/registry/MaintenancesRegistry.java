@@ -66,7 +66,7 @@ public class MaintenancesRegistry {
                     proxy = true;
                     continue;
                 }
-                Optional<RegisteredServer> registeredServerOptional = DACHUtility.getInstance().getServer().getServer(serversJSON.getString(j));
+                Optional<RegisteredServer> registeredServerOptional = DACHUtility.getInstance().getProxy().getServer(serversJSON.getString(j));
                 if (registeredServerOptional.isEmpty()) {
                     continue;
                 }

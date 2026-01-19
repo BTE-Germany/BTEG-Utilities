@@ -9,7 +9,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -29,7 +28,7 @@ public class ReportUtil {
     }
 
     public void report(){
-        DACHUtility.getInstance().getServer().getAllPlayers().stream()
+        DACHUtility.getInstance().getProxy().getAllPlayers().stream()
                 .filter(player -> player.hasPermission("group.sup"))
                 .forEach(player -> player.sendMessage(generateStaffMessage()));
         this.getReporter().sendMessage(generateReportedMessage());

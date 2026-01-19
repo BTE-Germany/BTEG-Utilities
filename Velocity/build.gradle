@@ -38,6 +38,7 @@ dependencies {
     compileOnly('org.projectlombok:lombok:1.18.30')
     annotationProcessor('org.projectlombok:lombok:1.18.30')
     compileOnly 'com.github.NEZNAMY:TAB-API:5.4.0'
+    implementation 'com.auth0:java-jwt:4.5.0'
 }
 
 def targetJavaVersion = 17

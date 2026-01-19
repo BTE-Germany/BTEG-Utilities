@@ -1,5 +1,8 @@
 package dev.btedach.dachutility;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.EventManager;
@@ -16,11 +19,15 @@ import dev.btedach.dachutility.listener.ChangeServerListener;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
+import dev.btedach.dachutility.utils.AccountConsoleConfig;
 import lombok.Getter;
 import me.neznamy.tab.api.TabAPI;
 import me.neznamy.tab.api.TabPlayer;
 import org.slf4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -28,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -47,33 +55,40 @@ import java.util.function.Function;
 public class DACHUtility {
 
     @Getter
+    public static DACHUtility instance;
+
+    @Getter
     @Inject
     private final Logger logger;
     @Getter
-    private final ProxyServer server;
+    private final ProxyServer proxy;
+    private final Path dataDirectoryPath;
 
-    @Getter
-    public static DACHUtility instance;
+    private MaintenancesRegistry maintenancesRegistry;
 
-    private final MaintenancesRegistry maintenancesRegistry;
+    private Algorithm algorithm;
+    private AccountConsoleConfig config;
 
     private ScheduledExecutorService scheduledExecutorServiceMaintenance;
 
     @Inject
-    public DACHUtility(ProxyServer server, Logger logger, CommandManager commandManager, @DataDirectory Path dataDirectoryPath) throws IOException {
-        this.server = server;
+    public DACHUtility(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectoryPath) throws IOException {
+        this.proxy = proxy;
         this.logger = logger;
+        this.dataDirectoryPath = dataDirectoryPath;
         instance = this;
         logger.info("Starting DACH Utility");
-
-        this.maintenancesRegistry = new MaintenancesRegistry(this, dataDirectoryPath, "maintenances.json");
-        this.maintenancesRegistry.loadMaintenances();
-
-        registerCommands(commandManager);
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        this.maintenancesRegistry = new MaintenancesRegistry(this, this.dataDirectoryPath, "maintenances.json");
+        this.maintenancesRegistry.loadMaintenances();
+
+        this.readAccountLinkConfig();
+
+        registerCommands();
+
         registerListener();
 
         Function<TabPlayer, String> placeholderFunction = tabPlayer -> {
@@ -102,18 +117,20 @@ public class DACHUtility {
         TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%maintenances-display%", 3000, placeholderFunction);
     }
 
-    private void registerListener(){
-        EventManager eventManager = server.getEventManager();
+    private void registerListener() {
+        EventManager eventManager = this.proxy.getEventManager();
         eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry));
 
     }
 
-    public void registerCommands(CommandManager commandManager){
+    public void registerCommands() {
+        CommandManager commandManager = this.proxy.getCommandManager();
         commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new Discord());
         commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
         //commandManager.register(commandManager.metaBuilder("report").build(), new Report()); Currently broken/not fully implemented
-        commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.server));
+        commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.proxy));
         commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plots", "plotserver", "plot").build(), new PlotsCommand());
+        commandManager.register(commandManager.metaBuilder("accountlink").build(), new AccountLinkCommand());
     }
 
     @Subscribe
@@ -145,5 +162,30 @@ public class DACHUtility {
         } else {
             return day + "." + (month < 10 ? "0" : "") + month + "." + year;
         }
+    }
+
+    private void readAccountLinkConfig() {
+        File file = new File(this.dataDirectoryPath.toFile(), "config.json");
+
+        if (!file.exists()) {
+            throw new RuntimeException("Config file not found");
+        }
+
+        try {
+            config = new Gson().fromJson(new FileReader(file), AccountConsoleConfig.class);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        algorithm = Algorithm.HMAC512(config.jwtSecret());
+    }
+
+    public String generateUrl(Player player) {
+        String token = JWT.create()
+                .withSubject(player.getUniqueId().toString())
+                .withExpiresAt(new Date(System.currentTimeMillis() + 30 * 60 * 1000)) // 30 minutes expiration
+                .withIssuer("AccountConsoleBungee")
+                .sign(algorithm);
+        return config.urlFormat().replace("{token}", token);
     }
 }

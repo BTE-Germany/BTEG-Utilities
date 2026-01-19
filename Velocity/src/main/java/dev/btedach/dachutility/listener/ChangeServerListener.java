@@ -53,7 +53,7 @@ public class ChangeServerListener {
                         return;
                     }
 
-                    Optional<RegisteredServer> lobbyServerOptional = DACHUtility.getInstance().getServer().getServer("Lobby-1");
+                    Optional<RegisteredServer> lobbyServerOptional = DACHUtility.getInstance().getProxy().getServer("Lobby-1");
                     if (lobbyServerOptional.isEmpty()) {
                         player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                         return;
@@ -86,7 +86,7 @@ public class ChangeServerListener {
             String date = DACHUtility.convertDate(maintenance.time().getYear(), maintenance.time().getMonthValue(), maintenance.time().getDayOfMonth());
             String time = maintenance.time().getHour() + ":" + (maintenance.time().getMinute() < 10 ? "0" : "") + maintenance.time().getMinute();
             // delay so the (many) other messages sent on join don't hide it
-            instance.getServer().getScheduler()
+            instance.getProxy().getScheduler()
                     .buildTask(instance, () -> event.getPlayer().sendMessage(Constants.prefixComponent.append(Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD).append(Component.text(" %s um %s, %s".formatted(date, time, maintenance.name()), NamedTextColor.RED)))))
                     .delay(1500, TimeUnit.MILLISECONDS)
                     .schedule();
