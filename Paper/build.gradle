@@ -27,13 +27,16 @@ repositories {
     maven {
         url = 'https://repo.extendedclip.com/releases/'
     }
+    maven {
+        url = 'https://maven.enginehub.org/repo/'
+    }
 }
 
 dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.6'
-    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    implementation 'com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.14.3'
-    compileOnly 'com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.14.3'
+    compileOnly 'io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT'
+    compileOnly 'com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.15.0'
+    compileOnly 'com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.15.0'
 }
 
 
