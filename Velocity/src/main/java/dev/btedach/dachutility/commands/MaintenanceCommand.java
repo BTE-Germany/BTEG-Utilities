@@ -8,6 +8,7 @@ import dev.btedach.dachutility.DACHUtility;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.utils.Servers;
+import dev.btedach.dachutility.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -100,10 +101,10 @@ public class MaintenanceCommand implements SimpleCommand {
     @Override
     public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
         return CompletableFuture.supplyAsync(() -> {
-            List<String> res = new ArrayList<>();
+            List<String> result = new ArrayList<>();
 
             if (!invocation.source().hasPermission("bteg.maintenance")) {
-                return res;
+                return result;
             }
 
             String[] args = invocation.arguments();
@@ -111,29 +112,37 @@ public class MaintenanceCommand implements SimpleCommand {
             String[] options1 = new String[] {"add", "cancel"};
 
             switch (args.length) {
-                case 0 -> Collections.addAll(res, options1);
+                case 0 -> Collections.addAll(result, options1);
 
                 case 1 -> {
                     for (String s : options1) {
-                        if(s.startsWith(args[0].toLowerCase())) res.add(s);
+                        if(s.startsWith(args[0].toLowerCase())) result.add(s);
                     }
                 }
 
                 case 2 -> {
                     if (!args[0].equalsIgnoreCase("cancel")) {
-                        return res;
+                        return result;
                     }
 
                     for (String name : this.maintenancesRegistry.getMaintenances().keySet()) {
                         if (!name.toLowerCase().startsWith(args[1].toLowerCase())) {
                             continue;
                         }
-                        res.add(name);
+                        result.add(name);
                     }
+                }
+
+                case 3 -> {
+                    if (!args[0].equalsIgnoreCase("add")) {
+                        return result;
+                    }
+
+                    result.addAll(Utils.getServersTabCompletion(args[2], this.proxyServer));
                 }
             }
 
-            return res;
+            return result;
         });
     }
 
