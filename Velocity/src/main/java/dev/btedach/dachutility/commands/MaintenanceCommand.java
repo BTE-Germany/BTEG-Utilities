@@ -7,7 +7,6 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import dev.btedach.dachutility.DACHUtility;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
-import dev.btedach.dachutility.utils.Constants;
 import dev.btedach.dachutility.utils.Servers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,6 +15,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
 public class MaintenanceCommand implements SimpleCommand {
 
@@ -34,11 +35,11 @@ public class MaintenanceCommand implements SimpleCommand {
 
         switch (args.length) {
             case 1 -> {
-                source.sendMessage(Constants.prefixComponent.append(Component.text("Nutze den Command folgendermaßen:", NamedTextColor.GOLD)));
-                source.sendMessage(Constants.prefixComponent.append(Component.text("/maintenance add", NamedTextColor.GOLD)
-                        .append(Component.text(" [name] [server] [date (z.B. 1.2.2034)] [time (z.B. 12:34)]", NamedTextColor.RED))));
-                source.sendMessage(Constants.prefixComponent.append(Component.text("/maintenance cancel", NamedTextColor.GOLD)
-                        .append(Component.text(" [name]", NamedTextColor.RED))));
+                sendMessage(source, Component.text("Nutze den Command folgendermaßen:", NamedTextColor.GOLD));
+                sendMessage(source, Component.text("/maintenance add", NamedTextColor.GOLD),
+                        Component.text(" [name] [server] [date (z.B. 1.2.2034)] [time (z.B. 12:34)]", NamedTextColor.RED));
+                sendMessage(source, Component.text("/maintenance cancel", NamedTextColor.GOLD),
+                        Component.text(" [name]", NamedTextColor.RED));
             }
             case 2 -> {
                 if(!args[0].equalsIgnoreCase("cancel")) {
@@ -47,11 +48,11 @@ public class MaintenanceCommand implements SimpleCommand {
                 }
                 String name = args[1];
                 if(!this.maintenancesRegistry.getMaintenances().containsKey(name)) {
-                    source.sendMessage(Constants.prefixComponent.append(Component.text("Es gibt keine Wartungsarbeiten mit diesem Namen!", NamedTextColor.GOLD)));
+                    sendMessage(source, Component.text("Es gibt keine Wartungsarbeiten mit diesem Namen!", NamedTextColor.GOLD));
                     return;
                 }
                 this.maintenancesRegistry.unregister(name);
-                source.sendMessage(Constants.prefixComponent.append(Component.text(args[1], NamedTextColor.RED).append(Component.text(" wurde entfernt!", NamedTextColor.GOLD))));
+                sendMessage(source, Component.text(args[1], NamedTextColor.RED), Component.text(" wurde entfernt!", NamedTextColor.GOLD));
             }
             case 5 -> {
                 if(!args[0].equalsIgnoreCase("add")) {
@@ -60,7 +61,7 @@ public class MaintenanceCommand implements SimpleCommand {
                 }
                 String name = args[1];
                 if(this.maintenancesRegistry.getMaintenances().containsKey(name)) {
-                    source.sendMessage(Constants.prefixComponent.append(Component.text("Es gibt bereits Wartungsarbeiten mit diesem Namen!", NamedTextColor.RED)));
+                    sendMessage(source, Component.text("Es gibt bereits Wartungsarbeiten mit diesem Namen!", NamedTextColor.RED));
                     return;
                 }
 
@@ -80,7 +81,7 @@ public class MaintenanceCommand implements SimpleCommand {
                 servers.removeIf(Objects::isNull);
 
                 this.maintenancesRegistry.register(maintenance);
-                source.sendMessage(Constants.prefixComponent.append(Component.text(args[1], NamedTextColor.RED).append(Component.text(" wurde gespeichert!", NamedTextColor.GOLD))));
+                sendMessage(source, Component.text(args[1], NamedTextColor.RED), Component.text(" wurde gespeichert!", NamedTextColor.GOLD));
 
                 String dateFormatted = DACHUtility.convertDate(maintenance.time().getYear(), maintenance.time().getMonthValue(), maintenance.time().getDayOfMonth());
                 String timeFormatted = maintenance.time().getHour() + ":" + (maintenance.time().getMinute() < 10 ? "0" : "") + maintenance.time().getMinute();
@@ -89,7 +90,7 @@ public class MaintenanceCommand implements SimpleCommand {
                         continue;
                     }
                     server.getPlayersConnected().forEach(player -> {
-                        player.sendMessage(Constants.prefixComponent.append(Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD).append(Component.text(" %s um %s, %s".formatted(dateFormatted, timeFormatted, maintenance.name()), NamedTextColor.RED))));
+                        sendMessage(player, Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD), Component.text(" %s um %s, %s".formatted(dateFormatted, timeFormatted, maintenance.name()), NamedTextColor.RED));
                     });
                 }
             }

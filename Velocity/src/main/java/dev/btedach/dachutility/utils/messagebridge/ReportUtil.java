@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
+
 @Getter
 public class ReportUtil {
     private final Player reporter;
@@ -30,8 +32,8 @@ public class ReportUtil {
     public void report(){
         DACHUtility.getInstance().getProxy().getAllPlayers().stream()
                 .filter(player -> player.hasPermission("group.sup"))
-                .forEach(player -> player.sendMessage(generateStaffMessage()));
-        this.getReporter().sendMessage(generateReportedMessage());
+                .forEach(player -> sendMessage(player, generateStaffMessage().asComponent()));
+        sendMessage(this.getReporter(), generateReportedMessage().asComponent());
         try {
             sendWebHook();
         } catch (IOException e) {

@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
+
 public class MaintenanceRunnable implements Runnable {
 
     private final Maintenance maintenance;
@@ -46,7 +48,7 @@ public class MaintenanceRunnable implements Runnable {
                 }
                 RegisteredServer lobbyServer = lobbyServerOptional.get();
 
-                lobbyServer.ping().orTimeout(1, TimeUnit.SECONDS)
+                lobbyServer.ping().orTimeout(3, TimeUnit.SECONDS)
                         .exceptionally(throwable -> {
                             player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                             return null;
@@ -56,7 +58,7 @@ public class MaintenanceRunnable implements Runnable {
                                 return;
                             }
 
-                            player.sendMessage(Constants.prefixComponent.append(Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD)));
+                            sendMessage(player, Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD));
 
                             player.createConnectionRequest(lobbyServer).connect();
                         });

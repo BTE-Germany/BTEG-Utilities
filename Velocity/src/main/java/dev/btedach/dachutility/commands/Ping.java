@@ -10,6 +10,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Optional;
 
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
+
 public class Ping implements SimpleCommand {
     @Override
     public void execute(Invocation invocation) {
@@ -18,21 +20,21 @@ public class Ping implements SimpleCommand {
 
         if (source instanceof Player player) {
             if(args.length == 0){
-                player.sendMessage(Component.text(Constants.ping +"Dein Ping beträgt " + player.getPing() + "ms"));
+                sendMessage(player, Component.text(Constants.ping +"Dein Ping beträgt " + player.getPing() + "ms"));
             }else{
                 if(player.hasPermission("ping")){
                     Optional<Player> player1 = DACHUtility.getInstance().getProxy().getPlayer(args[0]);
                     if(player1.isEmpty()){
-                        source.sendMessage(Component.text(NamedTextColor.RED +"Dieser Spieler ist nicht online!"));
+                        sendMessage(source, Component.text(NamedTextColor.RED +"Dieser Spieler ist nicht online!"));
                     }else {
-                        player.sendMessage(Component.text(Constants.ping + player1.get().getUsername()+"´s Ping beträgt " + player1.get().getPing() + "ms"));
+                        sendMessage(player, Component.text(Constants.ping + player1.get().getUsername()+"´s Ping beträgt " + player1.get().getPing() + "ms"));
                     }
                 }else{
-                    player.sendMessage(Component.text(Constants.prefix+ NamedTextColor.RED +"Du hast keine Rechte dafür!"));
+                    sendMessage(player, Component.text(Constants.prefix+ NamedTextColor.RED +"Du hast keine Rechte dafür!"));
                 }
             }
         } else {
-            source.sendMessage(Component.text("Du musst ein Spieler sein, um diesen Befehl benutzen zu können"));
+            sendMessage(source, Component.text("Du musst ein Spieler sein, um diesen Befehl benutzen zu können"));
         }
 
     }

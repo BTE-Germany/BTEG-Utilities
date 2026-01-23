@@ -6,9 +6,12 @@ import com.velocitypowered.api.proxy.Player;
 import dev.btedach.dachutility.DACHUtility;
 import dev.btedach.dachutility.utils.messagebridge.ReportUtil;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Arrays;
 import java.util.Optional;
+
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
 public class Report implements SimpleCommand {
     @Override
@@ -28,13 +31,13 @@ public class Report implements SimpleCommand {
                     ReportUtil reportUtil = new ReportUtil(player, player1.get(), stringBuilder.toString());
                     reportUtil.report();
                 }else{
-                    player.sendMessage(Component.text("Spieler " +args[0]+ " nicht online!"));
+                    sendMessage(player, Component.text("Spieler " +args[0]+ " nicht online!", NamedTextColor.RED));
                 }
             }else{
-                player.sendMessage(Component.text("Falscher Syntax. /report <Spielername> <Reason...>"));
+                sendMessage(player, Component.text("Falscher Syntax. /report <Spielername> <Reason...>", NamedTextColor.RED));
             }
         }else{
-            source.sendMessage(Component.text("Du musst ein Spieler sein, um diesen Befehl benutzen zu können"));
+            sendMessage(source, Component.text("Du musst ein Spieler sein, um diesen Befehl benutzen zu können", NamedTextColor.RED));
         }
     }
 }

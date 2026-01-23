@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
@@ -20,9 +21,11 @@ import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.utils.AccountConsoleConfig;
+import dev.btedach.dachutility.utils.Constants;
 import lombok.Getter;
 import me.neznamy.tab.api.TabAPI;
 import me.neznamy.tab.api.TabPlayer;
+import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -162,6 +165,18 @@ public class DACHUtility {
         } else {
             return day + "." + (month < 10 ? "0" : "") + month + "." + year;
         }
+    }
+
+    public static Component getMessage(Component... components) {
+        Component message = Constants.prefixComponent;
+        for (Component component : components) {
+            message = message.append(component);
+        }
+        return message;
+    }
+
+    public static void sendMessage(CommandSource receiver, Component... components) {
+        receiver.sendMessage(DACHUtility.getMessage(components));
     }
 
     private void readAccountLinkConfig() {

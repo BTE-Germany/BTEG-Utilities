@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
+
 public class ChangeServerListener {
     public static DACHUtility instance = DACHUtility.getInstance();
 
@@ -60,7 +62,7 @@ public class ChangeServerListener {
                     }
                     RegisteredServer lobbyServer = lobbyServerOptional.get();
 
-                    lobbyServer.ping().orTimeout(1, TimeUnit.SECONDS)
+                    lobbyServer.ping().orTimeout(3, TimeUnit.SECONDS)
                             .exceptionally(throwable -> {
                                 player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
                                 return null;
@@ -70,7 +72,7 @@ public class ChangeServerListener {
                                     return;
                                 }
 
-                                player.sendMessage(Constants.prefixComponent.append(Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD)));
+                                sendMessage(player, Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD));
 
                                 player.createConnectionRequest(lobbyServer).connect();
                             });
@@ -87,7 +89,7 @@ public class ChangeServerListener {
             String time = maintenance.time().getHour() + ":" + (maintenance.time().getMinute() < 10 ? "0" : "") + maintenance.time().getMinute();
             // delay so the (many) other messages sent on join don't hide it
             instance.getProxy().getScheduler()
-                    .buildTask(instance, () -> event.getPlayer().sendMessage(Constants.prefixComponent.append(Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD).append(Component.text(" %s um %s, %s".formatted(date, time, maintenance.name()), NamedTextColor.RED)))))
+                    .buildTask(instance, () -> sendMessage(event.getPlayer(), Component.text("Wartungsarbeiten auf diesem Server:", NamedTextColor.GOLD), Component.text(" %s um %s, %s".formatted(date, time, maintenance.name()), NamedTextColor.RED)))
                     .delay(1500, TimeUnit.MILLISECONDS)
                     .schedule();
         }
@@ -102,7 +104,7 @@ public class ChangeServerListener {
                         .clickEvent(ClickEvent.openUrl("https://buildthe.earth/credits"))
                         .toBuilder().build();
 
-                event.getPlayer().sendMessage(textComponent);
+                sendMessage(event.getPlayer(), textComponent);
             }
         }
     }
