@@ -82,21 +82,19 @@ public class ReportUtil {
     }
 
     private @NotNull ComponentLike generateReportedMessage(){
-        TextComponent textComponent1 = Component.text(Constants.reportPrefix).toBuilder().build();
-        TextComponent textComponent2 = Component.text("Vielen Dank für Deinen Report, er wird zeitnah bearbeitet.").color(NamedTextColor.GRAY).toBuilder().build();
-        return Component.text().append(textComponent1).append(textComponent2).build();
+        TextComponent textComponent = Component.text("Vielen Dank für Deinen Report, er wird zeitnah bearbeitet.", NamedTextColor.GRAY);
+        return Constants.reportPrefix.append(textComponent);
     }
     private @NotNull ComponentLike generateStaffMessage(){
 
-        TextComponent textComponent1 = Component.text(Constants.reportPrefix);
-        TextComponent textComponent2 = Component.text("Eine neuer Report ist eingegangen: \n").color(NamedTextColor.GRAY).toBuilder().build();
-        TextComponent textComponent3 = Component.text("Von: ").color(NamedTextColor.GRAY).toBuilder().build();
-        TextComponent textComponent4 = Component.text(this.getReporter().getUsername()).color(NamedTextColor.YELLOW).toBuilder().build();
-        TextComponent textComponent5 = Component.text(" -> ").color(NamedTextColor.GREEN).toBuilder().build();
-        TextComponent textComponent6 = Component.text(this.getReported().getUsername()).color(NamedTextColor.RED).toBuilder().build();
-        TextComponent textComponent7 = Component.text("Grund: ").color(NamedTextColor.GRAY).toBuilder().build();
-        TextComponent textComponent8 = Component.text(this.getReason()).color(NamedTextColor.YELLOW).toBuilder().build();
+        TextComponent textComponent1 = Component.text("Eine neuer Report ist eingegangen: \n", NamedTextColor.GRAY);
+        TextComponent textComponent2 = Component.text("Von: ", NamedTextColor.GRAY);
+        TextComponent textComponent3 = Component.text(this.getReporter().getUsername(), NamedTextColor.YELLOW);
+        TextComponent textComponent4 = Component.text(" -> ", NamedTextColor.GREEN);
+        TextComponent textComponent5 = Component.text(this.getReported().getUsername(), NamedTextColor.RED);
+        TextComponent textComponent6 = Component.text("Grund: ", NamedTextColor.GRAY);
+        TextComponent textComponent7 = Component.text(this.getReason(), NamedTextColor.YELLOW);
 
-        return Component.text().append(textComponent1).append(textComponent2).append(textComponent3).append(textComponent4).append(textComponent5).append(textComponent6).append(textComponent7).append(textComponent8).build();
+        return Constants.reportPrefix.append(textComponent1).append(textComponent2).append(textComponent3).append(textComponent4).append(textComponent5).append(textComponent6).append(textComponent7);
     }
 }

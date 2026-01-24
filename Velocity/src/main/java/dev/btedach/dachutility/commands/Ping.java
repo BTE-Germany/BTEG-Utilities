@@ -18,24 +18,24 @@ public class Ping implements SimpleCommand {
         CommandSource source = invocation.source();
         String[] args = invocation.arguments();
 
-        if (source instanceof Player player) {
-            if(args.length == 0){
-                sendMessage(player, Component.text(Constants.ping +"Dein Ping beträgt " + player.getPing() + "ms"));
-            }else{
-                if(player.hasPermission("ping")){
-                    Optional<Player> player1 = DACHUtility.getInstance().getProxy().getPlayer(args[0]);
-                    if(player1.isEmpty()){
-                        sendMessage(source, Component.text(NamedTextColor.RED +"Dieser Spieler ist nicht online!"));
-                    }else {
-                        sendMessage(player, Component.text(Constants.ping + player1.get().getUsername()+"´s Ping beträgt " + player1.get().getPing() + "ms"));
-                    }
-                }else{
-                    sendMessage(player, Component.text(Constants.prefix+ NamedTextColor.RED +"Du hast keine Rechte dafür!"));
-                }
-            }
-        } else {
-            sendMessage(source, Component.text("Du musst ein Spieler sein, um diesen Befehl benutzen zu können"));
+        if (!(source instanceof Player player)) {
+            sendMessage(source, Component.text("Du musst ein Spieler sein, um diesen Befehl benutzen zu können", NamedTextColor.RED));
+            return;
         }
 
+        if (args.length == 0){
+            sendMessage(player, Constants.ping, Component.text("Dein Ping beträgt " + player.getPing() + "ms", NamedTextColor.GRAY));
+        } else {
+            if (player.hasPermission("ping")){
+                Optional<Player> player1 = DACHUtility.getInstance().getProxy().getPlayer(args[0]);
+                if (player1.isEmpty()){
+                    sendMessage(source, Component.text("Dieser Spieler ist nicht online!", NamedTextColor.RED));
+                } else {
+                    sendMessage(player, Constants.ping, Component.text(player1.get().getUsername() + "´s Ping beträgt " + player1.get().getPing() + "ms", NamedTextColor.GRAY));
+                }
+            } else {
+                sendMessage(player, Component.text("Du hast keine Rechte dafür!", NamedTextColor.RED));
+            }
+        }
     }
 }
