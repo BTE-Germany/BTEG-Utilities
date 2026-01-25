@@ -4,14 +4,12 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import dev.btedach.dachutility.DACHUtility;
 import dev.btedach.dachutility.utils.Constants;
+import dev.btedach.dachutility.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
 public class MaintenanceRunnable implements Runnable {
 
@@ -48,20 +46,7 @@ public class MaintenanceRunnable implements Runnable {
                 }
                 RegisteredServer lobbyServer = lobbyServerOptional.get();
 
-                lobbyServer.ping().orTimeout(3, TimeUnit.SECONDS)
-                        .exceptionally(throwable -> {
-                            player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
-                            return null;
-                        })
-                        .thenAccept(pingResult -> {
-                            if (pingResult == null) {
-                                return;
-                            }
-
-                            sendMessage(player, Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD));
-
-                            player.createConnectionRequest(lobbyServer).connect();
-                        });
+                Utils.connectIfOnline(player, lobbyServer, () -> player.disconnect(Constants.prefixComponent.append(Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD))));
             }
         }
     }

@@ -8,6 +8,7 @@ import dev.btedach.dachutility.DACHUtility;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.utils.Constants;
+import dev.btedach.dachutility.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -37,6 +38,7 @@ public class ChangeServerListener {
     @Subscribe
     public void onServerPreConnect(ServerPreConnectEvent event) {
         Player player = event.getPlayer();
+        RegisteredServer previousServer = event.getPreviousServer();
         RegisteredServer targetServer = event.getOriginalServer();
 
         // maintenance
@@ -62,20 +64,13 @@ public class ChangeServerListener {
                     }
                     RegisteredServer lobbyServer = lobbyServerOptional.get();
 
-                    lobbyServer.ping().orTimeout(3, TimeUnit.SECONDS)
-                            .exceptionally(throwable -> {
-                                player.disconnect(Constants.prefixComponent.append(Component.text("Zum aktuellen Zeitpunkt finden Wartungsarbeiten statt!", NamedTextColor.GOLD)));
-                                return null;
-                            })
-                            .thenAccept(pingResult -> {
-                                if (pingResult == null) {
-                                    return;
-                                }
+                    // stay in lobby when player is currently in the lobby
+                    if (previousServer != null && previousServer.equals(lobbyServer)) {
+                        sendMessage(player, Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD));
+                        return;
+                    }
 
-                                sendMessage(player, Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD));
-
-                                player.createConnectionRequest(lobbyServer).connect();
-                            });
+                    Utils.connectIfOnline(player, lobbyServer, () -> player.disconnect(Constants.prefixComponent.append(Component.text("Auf diesem Server finden zum aktuellen Zeitpunkt Wartungsarbeiten statt!", NamedTextColor.GOLD))));
                     return;
                 }
             }

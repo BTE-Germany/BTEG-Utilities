@@ -1,12 +1,20 @@
 package dev.btedach.dachutility.utils;
 
+import com.velocitypowered.api.proxy.ConnectionRequestBuilder;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
 public class Utils {
 
@@ -66,6 +74,42 @@ public class Utils {
         serversShort.add((appendToInput ? input : "") + "lobby");
         serversShort.add((appendToInput ? input : "") + "proxy");
         return serversShort;
+    }
+
+    public static void connectIfOnline(Player player, RegisteredServer server) {
+        connectIfOnline(player, server, null);
+    }
+
+    public static void connectIfOnline(Player player, RegisteredServer server, Runnable errorRunnable) {
+        if (errorRunnable == null) {
+            errorRunnable = () -> sendMessage(player, Component.text("Server %s is offline.".formatted(server.getServerInfo().getName()), NamedTextColor.RED));
+        }
+
+        final Runnable finalErrorRunnable = errorRunnable;
+
+        // without ping the player would "join" again and e.g. the maintenances notice will be sent again
+        server.ping().orTimeout(3, TimeUnit.SECONDS)
+                .exceptionally(throwable -> {
+                    finalErrorRunnable.run();
+                    return null;
+                })
+                .thenAccept(pingResult -> {
+                    if (pingResult == null) {
+                        return;
+                    }
+
+                    player.createConnectionRequest(server).connect()
+                            .exceptionally(throwable -> {
+                                finalErrorRunnable.run();
+                                return null;
+                            })
+                            .thenAccept(result -> {
+                                if (result.isSuccessful() || result.getStatus() == ConnectionRequestBuilder.Status.CONNECTION_CANCELLED) {
+                                    return;
+                                }
+                                finalErrorRunnable.run();
+                            });
+                });
     }
 
 }

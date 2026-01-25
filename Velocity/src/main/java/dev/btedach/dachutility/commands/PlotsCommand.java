@@ -4,11 +4,11 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import dev.btedach.dachutility.DACHUtility;
+import dev.btedach.dachutility.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
@@ -25,20 +25,7 @@ public class PlotsCommand implements SimpleCommand {
         }
         RegisteredServer plotServer = plotServerOptional.get();
 
-        plotServer.ping().orTimeout(3, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    sendMessage(player, Component.text("Server " + plotServer.getServerInfo().getName() + " is offline.", NamedTextColor.RED));
-                    return null;
-                })
-                .thenAccept(pingResult -> {
-                    if (pingResult == null) {
-                        return;
-                    }
-
-                    sendMessage(player, Component.text("Verbinde zum Plotserver.", NamedTextColor.GOLD));
-
-                    player.createConnectionRequest(plotServer).connect();
-                });
+        Utils.connectIfOnline(player, plotServer);
     }
 
     @Override
