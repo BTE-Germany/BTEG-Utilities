@@ -132,7 +132,7 @@ public class DACHUtility {
         commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
         //commandManager.register(commandManager.metaBuilder("report").build(), new Report()); Currently broken/not fully implemented
         commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.proxy));
-        commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plots", "plotserver", "plot").build(), new PlotsCommand());
+        commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plotserver").build(), new PlotsCommand());
         commandManager.register(commandManager.metaBuilder("accountlink").build(), new AccountLinkCommand());
     }
 
