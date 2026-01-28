@@ -12,7 +12,7 @@ public class Servers {
     public static Map<String, RegisteredServer> fromInput(String... serversArgs) {
 
         Map<String, RegisteredServer> servers = new HashMap<>();
-        for (RegisteredServer server : DACHUtility.getInstance().getProxy().getAllServers()) {
+        for (RegisteredServer server : DACHUtility.getInstance().getProxyServer().getAllServers()) {
             servers.put(server.getServerInfo().getName(), server);
         }
         Map<String, RegisteredServer> serversRes = new HashMap<>();

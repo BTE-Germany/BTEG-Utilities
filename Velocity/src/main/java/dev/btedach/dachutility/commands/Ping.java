@@ -27,7 +27,7 @@ public class Ping implements SimpleCommand {
             sendMessage(player, Constants.ping, Component.text("Dein Ping beträgt " + player.getPing() + "ms", NamedTextColor.GRAY));
         } else {
             if (player.hasPermission("ping")){
-                Optional<Player> player1 = DACHUtility.getInstance().getProxy().getPlayer(args[0]);
+                Optional<Player> player1 = DACHUtility.getInstance().getProxyServer().getPlayer(args[0]);
                 if (player1.isEmpty()){
                     sendMessage(source, Component.text("Dieser Spieler ist nicht online!", NamedTextColor.RED));
                 } else {

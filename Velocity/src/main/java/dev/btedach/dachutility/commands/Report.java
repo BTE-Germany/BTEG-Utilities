@@ -22,7 +22,7 @@ public class Report implements SimpleCommand {
         if(source instanceof Player player){
             if(args.length > 1){
                 Optional<Player> player1;
-                if((player1 = DACHUtility.getInstance().getProxy().getPlayer(args[0])).isPresent()){
+                if((player1 = DACHUtility.getInstance().getProxyServer().getPlayer(args[0])).isPresent()){
                     String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
                     StringBuilder stringBuilder = new StringBuilder();
                     for(String s : newArgs){

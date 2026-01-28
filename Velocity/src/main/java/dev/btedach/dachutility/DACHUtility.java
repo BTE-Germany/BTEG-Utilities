@@ -16,10 +16,13 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.btedach.dachutility.commands.*;
+import dev.btedach.dachutility.data.ConfigReader;
 import dev.btedach.dachutility.listener.ChangeServerListener;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
+import dev.btedach.dachutility.registry.RestartsRegistry;
+import dev.btedach.dachutility.restart.RestartsIDsManager;
 import dev.btedach.dachutility.utils.AccountConsoleConfig;
 import dev.btedach.dachutility.utils.Constants;
 import lombok.Getter;
@@ -64,9 +67,13 @@ public class DACHUtility {
     @Inject
     private final Logger logger;
     @Getter
-    private final ProxyServer proxy;
+    private final ProxyServer proxyServer;
     private final Path dataDirectoryPath;
 
+    private ConfigReader configReader;
+    private RestartsIDsManager restartsIDsManager;
+
+    private RestartsRegistry restartsRegistry;
     private MaintenancesRegistry maintenancesRegistry;
 
     private Algorithm algorithm;
@@ -75,8 +82,8 @@ public class DACHUtility {
     private ScheduledExecutorService scheduledExecutorServiceMaintenance;
 
     @Inject
-    public DACHUtility(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectoryPath) throws IOException {
-        this.proxy = proxy;
+    public DACHUtility(ProxyServer proxyServer, Logger logger, @DataDirectory Path dataDirectoryPath) throws IOException {
+        this.proxyServer = proxyServer;
         this.logger = logger;
         this.dataDirectoryPath = dataDirectoryPath;
         instance = this;
@@ -85,15 +92,38 @@ public class DACHUtility {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        this.configReader = new ConfigReader(this.dataDirectoryPath, this.logger);
+        this.restartsIDsManager = new RestartsIDsManager();
+        this.restartsRegistry = new RestartsRegistry(restartsIDsManager);
         this.maintenancesRegistry = new MaintenancesRegistry(this, this.dataDirectoryPath, "maintenances.json");
         this.maintenancesRegistry.loadMaintenances();
 
         this.readAccountLinkConfig();
 
         registerCommands();
-
         registerListener();
 
+        registerMaintenancePlaceholder();
+    }
+
+    private void registerListener() {
+        EventManager eventManager = this.proxyServer.getEventManager();
+        eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry));
+
+    }
+
+    private void registerCommands() {
+        CommandManager commandManager = this.proxyServer.getCommandManager();
+        commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new Discord());
+        commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
+        //commandManager.register(commandManager.metaBuilder("report").build(), new Report()); Currently broken/not fully implemented
+        commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.proxyServer));
+        commandManager.register(commandManager.metaBuilder("bteg").build(), new RestartCommand(this, this.proxyServer, this.restartsRegistry, this.restartsIDsManager, this.configReader));
+        commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plotserver").build(), new PlotsCommand());
+        commandManager.register(commandManager.metaBuilder("accountlink").build(), new AccountLinkCommand());
+    }
+
+    private void registerMaintenancePlaceholder() {
         Function<TabPlayer, String> placeholderFunction = tabPlayer -> {
             if(maintenancesRegistry.getMaintenances().isEmpty()) {
                 return "";
@@ -118,22 +148,6 @@ public class DACHUtility {
         };
 
         TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder("%maintenances-display%", 3000, placeholderFunction);
-    }
-
-    private void registerListener() {
-        EventManager eventManager = this.proxy.getEventManager();
-        eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry));
-
-    }
-
-    public void registerCommands() {
-        CommandManager commandManager = this.proxy.getCommandManager();
-        commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new Discord());
-        commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
-        //commandManager.register(commandManager.metaBuilder("report").build(), new Report()); Currently broken/not fully implemented
-        commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.proxy));
-        commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plotserver").build(), new PlotsCommand());
-        commandManager.register(commandManager.metaBuilder("accountlink").build(), new AccountLinkCommand());
     }
 
     @Subscribe

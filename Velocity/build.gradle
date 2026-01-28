@@ -45,7 +45,7 @@ dependencies {
     testImplementation 'org.junit.platform:junit-platform-launcher:1.8.2'
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 21
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

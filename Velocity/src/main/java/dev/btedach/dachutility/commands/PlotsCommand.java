@@ -18,7 +18,7 @@ public class PlotsCommand implements SimpleCommand {
     public void execute(Invocation invocation) {
         Player player = (Player) invocation.source();
 
-        Optional<RegisteredServer> plotServerOptional = DACHUtility.getInstance().getProxy().getServer("Plot-1");
+        Optional<RegisteredServer> plotServerOptional = DACHUtility.getInstance().getProxyServer().getServer("Plot-1");
         if (plotServerOptional.isEmpty()) {
             sendMessage(player, Component.text("Der Plotserver ist gerade nicht verfügbar.", NamedTextColor.RED));
             return;

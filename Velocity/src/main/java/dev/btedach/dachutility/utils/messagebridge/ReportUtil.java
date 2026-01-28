@@ -30,7 +30,7 @@ public class ReportUtil {
     }
 
     public void report(){
-        DACHUtility.getInstance().getProxy().getAllPlayers().stream()
+        DACHUtility.getInstance().getProxyServer().getAllPlayers().stream()
                 .filter(player -> player.hasPermission("group.sup"))
                 .forEach(player -> sendMessage(player, generateStaffMessage().asComponent()));
         sendMessage(this.getReporter(), generateReportedMessage().asComponent());

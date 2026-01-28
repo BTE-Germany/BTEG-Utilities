@@ -86,7 +86,7 @@ public class MaintenanceCommand implements SimpleCommand {
 
                 String dateFormatted = DACHUtility.convertDate(maintenance.time().getYear(), maintenance.time().getMonthValue(), maintenance.time().getDayOfMonth());
                 String timeFormatted = maintenance.time().getHour() + ":" + (maintenance.time().getMinute() < 10 ? "0" : "") + maintenance.time().getMinute();
-                for (RegisteredServer server : DACHUtility.getInstance().getProxy().getAllServers()) {
+                for (RegisteredServer server : DACHUtility.getInstance().getProxyServer().getAllServers()) {
                     if (!proxy && !servers.contains(server)) {
                         continue;
                     }
@@ -103,7 +103,7 @@ public class MaintenanceCommand implements SimpleCommand {
         return CompletableFuture.supplyAsync(() -> {
             List<String> result = new ArrayList<>();
 
-            if (!invocation.source().hasPermission("bteg.maintenance")) {
+            if (!this.hasPermission(invocation)) {
                 return result;
             }
 
