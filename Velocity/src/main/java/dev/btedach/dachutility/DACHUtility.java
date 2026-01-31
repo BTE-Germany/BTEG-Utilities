@@ -23,7 +23,7 @@ import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.registry.RestartsRegistry;
 import dev.btedach.dachutility.restart.RestartsIDsManager;
-import dev.btedach.dachutility.utils.AccountConsoleConfig;
+import dev.btedach.dachutility.data.AccountLinkConfig;
 import dev.btedach.dachutility.utils.Constants;
 import lombok.Getter;
 import me.neznamy.tab.api.TabAPI;
@@ -77,7 +77,7 @@ public class DACHUtility {
     private MaintenancesRegistry maintenancesRegistry;
 
     private Algorithm algorithm;
-    private AccountConsoleConfig config;
+    private AccountLinkConfig config;
 
     private ScheduledExecutorService scheduledExecutorServiceMaintenance;
 
@@ -194,17 +194,7 @@ public class DACHUtility {
     }
 
     private void readAccountLinkConfig() {
-        File file = new File(this.dataDirectoryPath.toFile(), "config.json");
-
-        if (!file.exists()) {
-            throw new RuntimeException("Config file not found");
-        }
-
-        try {
-            config = new Gson().fromJson(new FileReader(file), AccountConsoleConfig.class);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        config = configReader.readAccountLinkConfig();
 
         algorithm = Algorithm.HMAC512(config.jwtSecret());
     }

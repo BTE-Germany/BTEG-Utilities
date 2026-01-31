@@ -1,4 +1,0 @@
-{
-  "jwtSecret": "your-very-secure-secret-key",
-  "urlFormat": "https://console.bte-germany.de/link/minecraft?token={token}"
-}
