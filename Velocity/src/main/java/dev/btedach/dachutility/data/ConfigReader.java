@@ -53,9 +53,9 @@ public class ConfigReader {
     }
 
     public AccountLinkConfig readAccountLinkConfig() {
-        ConfigurationNode portainerNode = this.rootNode.node("account-link");
-        String jwtSecret = portainerNode.node("jwt-secret").getString();
-        String urlFormat = portainerNode.node("url-format").getString();
+        ConfigurationNode accountLinkNode = this.rootNode.node("account-link");
+        String jwtSecret = accountLinkNode.node("jwt-secret").getString();
+        String urlFormat = accountLinkNode.node("url-format").getString();
 
         if (jwtSecret == null || urlFormat == null) {
             this.logger.warn("Account link configuration is invalid");
