@@ -33,7 +33,27 @@ public class Converter {
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException ignored) { /* Ignored */ }
         } else {
-            blockType = BlockTypes.get(pattern.toLowerCase());
+           blockType = switch (pattern.toLowerCase()) {
+            case "black" -> BlockTypes.get("black_wool");
+            case "blue" -> BlockTypes.get("blue_wool");
+            case "brown" -> BlockTypes.get("brown_wool");
+            case "cyan" -> BlockTypes.get("cyan_wool");
+            case "gray" -> BlockTypes.get("gray_wool");
+            case "grey" -> BlockTypes.get("gray_wool");
+            case "green" -> BlockTypes.get("green_wool");
+            case "light_blue" -> BlockTypes.get("light_blue_wool");
+            case "light_gray" -> BlockTypes.get("light_gray_wool");
+            case "light_grey" -> BlockTypes.get("light_gray_wool");
+            case "lime" -> BlockTypes.get("lime_wool");
+            case "magenta" -> BlockTypes.get("magenta_wool");
+            case "orange" -> BlockTypes.get("orange_wool");
+            case "pink" -> BlockTypes.get("pink_wool");
+            case "purple" -> BlockTypes.get("purple_wool");
+            case "red" -> BlockTypes.get("red_wool");
+            case "white" -> BlockTypes.get("white_wool");
+            case "yellow" -> BlockTypes.get("yellow_wool");
+            default -> BlockTypes.get(pattern.toLowerCase());
+           };
         }
         return blockType;
     }
