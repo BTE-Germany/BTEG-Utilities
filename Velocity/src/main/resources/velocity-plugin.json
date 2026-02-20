@@ -1,0 +1,16 @@
+{
+  "id": "dach-utility",
+  "name": "DACH-Utility",
+  "version": "${version}",
+  "main": "dev.btedach.dachutility.DACHUtility",
+  "url": "https://buildthe.earth/dach",
+  "description": "Proxy plugin for BTEG X BTE Alps",
+  "authors": [
+    "Dev Team of BTEG and BTE Alps"
+  ],
+  "dependencies": [
+    {
+      "id": "tab"
+    }
+  ]
+}

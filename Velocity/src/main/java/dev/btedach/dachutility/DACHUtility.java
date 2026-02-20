@@ -47,17 +47,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-@Plugin(
-        id = "dach-utility",
-        name = "DACH-Utility",
-        version = "1.0.0-SNAPSHOT",
-        description = "Proxy plugin for BTEG X BTE Alps",
-        url = "https://buildthe.earth/dach",
-        authors = {"Dev Team of BTEG and BTE Alps"},
-        dependencies = {
-                @Dependency(id = "tab")
-        }
-)
 public class DACHUtility {
 
     @Getter

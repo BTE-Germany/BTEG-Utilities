@@ -1,5 +1,5 @@
 name: bteg_utilities
-version: ${project.version}
+version: ${version}
 main: de.btegermany.utilities.BTEGUtilities
 authors: [ Leander, JaskerX ]
 website: bte-germany.de
