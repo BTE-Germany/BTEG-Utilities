@@ -8,6 +8,7 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionOperationException;
 
 import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.worldedit.WorldEditUtil;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -24,7 +25,7 @@ import java.util.List;
 public class LidarCommand implements TabExecutor {
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
         if (!(sender instanceof Player player) || !(command.getName().equalsIgnoreCase("lidar") || command.getName().equalsIgnoreCase("/lidar"))) {
             return true;
         }
@@ -33,20 +34,9 @@ public class LidarCommand implements TabExecutor {
             return true;
         }
 
-        Region region;
-        // Get WorldEdit selection of player
-        try {
-            LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
-            if(localSession == null) {
-                return true;
-            }
-            region = localSession.getSelection(localSession.getSelectionWorld());
-        } catch (NullPointerException | IncompleteRegionException ex) {
-            ex.printStackTrace();
-            player.sendMessage(BTEGUtilities.PREFIX + "§cPlease select a WorldEdit selection!");
-            return true;
-        }
-        this.lidar(player, region, args);
+        WorldEditUtil.findSelection(player, session -> {
+            this.lidar(player, session.region(), args);
+        });
 
         return true;
     }

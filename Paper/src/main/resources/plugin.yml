@@ -42,11 +42,11 @@ commands:
         - /cover
   rail:
     description: Builds rails
-    usage: /rail <Block-ID or undo> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>
+    usage: /rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>
     aliases:
       - /rail
   connect:
     description: Connects blocks
-    usage: /connect <Block-ID or undo>
+    usage: /connect <Block-ID>
     aliases:
       - /connect

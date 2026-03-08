@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public final class BTEGUtilities extends JavaPlugin {
 
-    public static final String PREFIX = "ᾠ§7 "; // "§b§lBTEG §7» §7"
+    public static final String PREFIX = "ᾠ§7 ";
 
     @Override
     public void onEnable() {
@@ -22,8 +22,8 @@ public final class BTEGUtilities extends JavaPlugin {
         Objects.requireNonNull(getCommand("cover")).setExecutor(new CoverCommand());
         Objects.requireNonNull(getCommand("lidar")).setExecutor(new LidarCommand());
         Objects.requireNonNull(getCommand("rail")).setExecutor(new RailCommand());
-        Objects.requireNonNull(getCommand("/side")).setExecutor(new Side());
-        Objects.requireNonNull(getCommand("speed")).setExecutor(new Speed());
+        Objects.requireNonNull(getCommand("/side")).setExecutor(new SideCommand());
+        Objects.requireNonNull(getCommand("speed")).setExecutor(new SpeedCommand());
         Objects.requireNonNull(getCommand("cleanup")).setExecutor(new CleanUpCommand());
         Objects.requireNonNull(getCommand("connect")).setExecutor(new ConnectCommand());
         Objects.requireNonNull(getCommand("regionfile")).setExecutor(new RegionFileCommand());

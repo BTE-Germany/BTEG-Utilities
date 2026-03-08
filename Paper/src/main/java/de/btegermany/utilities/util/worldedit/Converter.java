@@ -1,4 +1,4 @@
-package de.btegermany.utilities.util;
+package de.btegermany.utilities.util.worldedit;
 
 
 import com.sk89q.worldedit.WorldEdit;

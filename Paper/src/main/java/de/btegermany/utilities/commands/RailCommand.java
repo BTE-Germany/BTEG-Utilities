@@ -1,17 +1,16 @@
 package de.btegermany.utilities.commands;
 
-import com.sk89q.worldedit.*;
 
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.regions.RegionOperationException;
 
+import com.sk89q.worldedit.world.block.BaseBlock;
+import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import de.btegermany.utilities.BTEGUtilities;
-import de.btegermany.utilities.util.CommandWithBackup;
-import de.btegermany.utilities.util.Converter;
-import de.btegermany.utilities.util.TabUtil;
+import de.btegermany.utilities.util.*;
 
+import de.btegermany.utilities.util.worldedit.*;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -26,10 +25,10 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 
 
-public class RailCommand extends CommandWithBackup implements TabExecutor {
+public class RailCommand implements TabExecutor {
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
         if (!(sender instanceof Player player) || !(command.getName().equalsIgnoreCase("rail") || command.getName().equalsIgnoreCase("/rail"))) {
             return true;
         }
@@ -40,12 +39,6 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
         if (args.length == 0) {
             player.sendMessage(BTEGUtilities.PREFIX + "Usage:");
             player.sendMessage(BTEGUtilities.PREFIX + "//rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
-            player.sendMessage(BTEGUtilities.PREFIX + "//rail <undo>");
-            return true;
-        }
-
-        if (args[0].equals("undo")) {
-            this.pasteBackup();
             return true;
         }
 
@@ -54,119 +47,183 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
         boolean overheadLine = args.length >= 3 && args[2].equalsIgnoreCase("y");
         boolean inGround = args.length >= 4 && args[3].equalsIgnoreCase("y");
 
-        Region region;
-        // Get WorldEdit selection of player
-        try {
-            LocalSession localSession = WorldEdit.getInstance().getSessionManager().findByName(player.getName());
-            if(localSession == null) {
-                return true;
-            }
-            region = localSession.getSelection(localSession.getSelectionWorld());
+        WorldEditUtil.findSelection(player, session -> {
+            Direction playerDirection = Direction.ofPlayer(player);
+            BlockType anvilType = Converter.getBlockType("anvil");
+            BaseBlock anvils = new BaseBlock(anvilType.getDefaultState().with(anvilType.getProperty("facing"),
+                    (playerDirection.isHorizontal() ? com.sk89q.worldedit.util.Direction.EAST : com.sk89q.worldedit.util.Direction.NORTH)));
 
             if (overheadLine) {
-                region.expand(BlockVector3.at(0, 8, 0));
+                session.region().expand(BlockVector3.at(0, 8, 0));
+                this.createOverheadLines(session, playerDirection, middleBlockType);
             }
-        } catch (NullPointerException | IncompleteRegionException | RegionOperationException ex) {
-            ex.printStackTrace();
-            player.sendMessage(BTEGUtilities.PREFIX + "§cPlease select a WorldEdit selection!");
-            return true;
-        }
-        this.saveBackup(player, region);
 
-        Direction playerDirection = this.getDirection(player);
-        String anvils;
-        if (playerDirection.isHorizontal()) {
-            player.chat("//side " + args[0] + " air n n");
-            anvils = "anvil:1";
-        } else {
-            player.chat("//side " + args[0] + " air e n");
-            anvils = "anvil";
-        }
+            this.createRails(session, playerDirection, anvils, middleBlockType, railwaySleepersMaterial, inGround);
 
-        if (overheadLine) {
-            this.createOverheadLines(player, middleBlockType);
-        }
-
-        String[] placeholderBlocks = new String[] {"light_gray_glazed_terracotta", "red_glazed_terracotta", middleBlockType.toString(), "yellow_glazed_terracotta", "cyan_glazed_terracotta"};
-        String duplicatePlaceholder = "brown_glazed_terracotta";
-        if (playerDirection.isHorizontal()) {
-            player.chat(String.format("//side %s %s n", placeholderBlocks[2], placeholderBlocks[1]));
-            player.chat(String.format("//side %s %s s", placeholderBlocks[2], placeholderBlocks[3]));
-
-            player.chat(String.format("//side %s %s n y %s", placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[2]));
-            player.chat(String.format("//side %s %s s y %s", duplicatePlaceholder, duplicatePlaceholder, placeholderBlocks[2]));
-
-            if (!inGround) {
-                player.chat(String.format("//side %s %s n y !%s,%s,%s", placeholderBlocks[1], placeholderBlocks[0], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[3]));
-                player.chat(String.format("//side %s %s s y !%s,%s,%s,%s", placeholderBlocks[3], placeholderBlocks[4], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[1], placeholderBlocks[0]));
-                // full width sleepers for 1 block distance between anvils instead of one-sided
-                player.chat(String.format("//side %s %s s y %s", placeholderBlocks[3], placeholderBlocks[2], placeholderBlocks[0]));
-            }
-        } else {
-            player.chat(String.format("//side %s %s w", placeholderBlocks[2], placeholderBlocks[1]));
-            player.chat(String.format("//side %s %s e", placeholderBlocks[2], placeholderBlocks[3]));
-
-            player.chat(String.format("//side %s %s w y %s", placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[2]));
-            player.chat(String.format("//side %s %s e y %s", duplicatePlaceholder, duplicatePlaceholder, placeholderBlocks[2]));
-
-            if (!inGround) {
-                player.chat(String.format("//side %s %s w y !%s,%s,%s", placeholderBlocks[1], placeholderBlocks[0], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[3]));
-                player.chat(String.format("//side %s %s e y !%s,%s,%s,%s", placeholderBlocks[3], placeholderBlocks[4], placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[1], placeholderBlocks[0]));
-                // full width sleepers for 1 block distance between anvils instead of one-sided
-                player.chat(String.format("//side %s %s e y %s", placeholderBlocks[3], placeholderBlocks[2], placeholderBlocks[0]));
-            }
-        }
-        player.chat(String.format("//re %s,%s,%s %s", placeholderBlocks[1], placeholderBlocks[3], duplicatePlaceholder, anvils));
-
-        if (!inGround) {
-            if (playerDirection.isHorizontal()) {
-                player.chat(String.format("//re %s %s[north=none,south=low,west=none,east=none,up=false]", placeholderBlocks[0], railwaySleepersMaterial));
-                player.chat(String.format("//re %s %s[north=low,south=none,west=none,east=none,up=false]", placeholderBlocks[4], railwaySleepersMaterial));
-                player.chat(String.format("//re %s %s[north=low,south=low,west=none,east=none,up=false]", placeholderBlocks[2], railwaySleepersMaterial));
-            } else {
-                player.chat(String.format("//re %s %s[north=none,south=none,west=none,east=low,up=false]", placeholderBlocks[0], railwaySleepersMaterial));
-                player.chat(String.format("//re %s %s[north=none,south=none,west=low,east=low,up=false]", placeholderBlocks[2], railwaySleepersMaterial));
-                player.chat(String.format("//re %s %s[north=none,south=none,west=low,east=none,up=false]", placeholderBlocks[4], railwaySleepersMaterial));
-            }
-        }
+            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+        });
 
         return true;
     }
 
-    private void createOverheadLines(Player player, BlockType middleBlockType) {
-        String overheadLineBlock;
-        if (this.getDirection(player).isHorizontal()) {
-            overheadLineBlock = "black_stained_glass_pane[north=false,south=false,west=true,east=true]";
+    private void createRails(SelectionEditSession session, Direction playerDirection, BaseBlock anvils, BlockType middleBlockType, String railwaySleepersMaterial, boolean inGround) {
+        BlockType[] placeholderBlocks = new BlockType[] {
+                Converter.getBlockType("light_gray_glazed_terracotta"),
+                Converter.getBlockType("red_glazed_terracotta"),
+                middleBlockType,
+                Converter.getBlockType("yellow_glazed_terracotta"),
+                Converter.getBlockType("cyan_glazed_terracotta")
+        };
+        String duplicatePlaceholderName = "brown_glazed_terracotta";
+        BlockType duplicatePlaceholder = Converter.getBlockType(duplicatePlaceholderName);
+
+        // create placeholder blocks
+        List<ReplaceSideArgs> replaceSideSteps = new ArrayList<>();
+
+        if (playerDirection.isHorizontal()) {
+            replaceSideSteps.addAll(List.of(
+                new ReplaceSideArgs(placeholderBlocks[2], placeholderBlocks[1], Direction.NORTH),
+                new ReplaceSideArgs(placeholderBlocks[2], placeholderBlocks[3], Direction.SOUTH),
+
+                new ReplaceSideArgs(placeholderBlocks[2], duplicatePlaceholder, Direction.NORTH, true, new TypeOnlyMask(placeholderBlocks[2])),
+                new ReplaceSideArgs(duplicatePlaceholder, duplicatePlaceholder, Direction.SOUTH, true, new TypeOnlyMask(placeholderBlocks[2]))
+            ));
+
+            if (!inGround) {
+                replaceSideSteps.addAll(List.of(
+                    new ReplaceSideArgs(placeholderBlocks[1], placeholderBlocks[0], Direction.NORTH, true,
+                            new TypeOnlyMask(true, placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[3])),
+                    new ReplaceSideArgs(placeholderBlocks[3], placeholderBlocks[4], Direction.SOUTH, true,
+                            new TypeOnlyMask(true, placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[1], placeholderBlocks[0])),
+                    // full width sleepers for 1 block distance between anvils instead of one-sided
+                    new ReplaceSideArgs(placeholderBlocks[3], placeholderBlocks[2], Direction.SOUTH, true, new TypeOnlyMask(placeholderBlocks[0]))
+                ));
+            }
         } else {
-            overheadLineBlock = "black_stained_glass_pane[north=true,south=true,west=false,east=false]";
+            replaceSideSteps.addAll(List.of(
+                new ReplaceSideArgs(placeholderBlocks[2], placeholderBlocks[1], Direction.WEST),
+                new ReplaceSideArgs(placeholderBlocks[2], placeholderBlocks[3], Direction.EAST),
+
+                new ReplaceSideArgs(placeholderBlocks[2], duplicatePlaceholder, Direction.WEST, true, new TypeOnlyMask(placeholderBlocks[2])),
+                new ReplaceSideArgs(duplicatePlaceholder, duplicatePlaceholder, Direction.EAST, true, new TypeOnlyMask(placeholderBlocks[2]))
+            ));
+
+            if (!inGround) {
+                replaceSideSteps.addAll(List.of(
+                    new ReplaceSideArgs(placeholderBlocks[1], placeholderBlocks[0], Direction.WEST, true,
+                            new TypeOnlyMask(true, placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[3])),
+                    new ReplaceSideArgs(placeholderBlocks[3], placeholderBlocks[4], Direction.EAST, true,
+                            new TypeOnlyMask(true, placeholderBlocks[2], duplicatePlaceholder, placeholderBlocks[1], placeholderBlocks[0])),
+                    // full width sleepers for 1 block distance between anvils instead of one-sided
+                    new ReplaceSideArgs(placeholderBlocks[3], placeholderBlocks[2], Direction.EAST, true, new TypeOnlyMask(placeholderBlocks[0]))
+                ));
+            }
         }
 
-        player.chat(String.format("//re >%s %s", middleBlockType, overheadLineBlock));
-        for (int i = 0; i < 5; i++) {
-            player.chat(String.format("//re >%s %s", overheadLineBlock, overheadLineBlock));
+        for (ReplaceSideArgs args : replaceSideSteps) {
+            SideCommand.replaceSide(session, args);
         }
-        player.chat(String.format("//re >%s lime_glazed_terracotta", middleBlockType));
-        for (int i = 0; i < 4; i++) {
-            player.chat("//re >lime_glazed_terracotta lime_glazed_terracotta");
+
+
+        // replace placeholder blocks (anvils, railway sleepers)
+        List<ReplaceArgs> replaceSteps = new ArrayList<>();
+
+        replaceSteps.add(new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[1], placeholderBlocks[3], duplicatePlaceholder), anvils.toBlockState()));
+
+        if (!inGround) {
+            BlockType railwaySleepersType = Converter.getBlockType(railwaySleepersMaterial);
+            if (playerDirection.isHorizontal()) {
+                replaceSteps.addAll(List.of(
+                    new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[0]), railwaySleepersType.getDefaultState()
+                            .with(railwaySleepersType.getProperty("north"), "none")
+                            .with(railwaySleepersType.getProperty("south"), "low")
+                            .with(railwaySleepersType.getProperty("west"), "none")
+                            .with(railwaySleepersType.getProperty("east"), "none")
+                            .with(railwaySleepersType.getProperty("up"), false)),
+                    new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[4]), railwaySleepersType.getDefaultState()
+                            .with(railwaySleepersType.getProperty("north"), "low")
+                            .with(railwaySleepersType.getProperty("south"), "none")
+                            .with(railwaySleepersType.getProperty("west"), "none")
+                            .with(railwaySleepersType.getProperty("east"), "none")
+                            .with(railwaySleepersType.getProperty("up"), false)),
+                    new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[2]), railwaySleepersType.getDefaultState()
+                            .with(railwaySleepersType.getProperty("north"), "low")
+                            .with(railwaySleepersType.getProperty("south"), "low")
+                            .with(railwaySleepersType.getProperty("west"), "none")
+                            .with(railwaySleepersType.getProperty("east"), "none")
+                            .with(railwaySleepersType.getProperty("up"), false))
+                ));
+            } else {
+                replaceSteps.addAll(List.of(
+                        new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[0]), railwaySleepersType.getDefaultState()
+                                .with(railwaySleepersType.getProperty("north"), "none")
+                                .with(railwaySleepersType.getProperty("south"), "none")
+                                .with(railwaySleepersType.getProperty("west"), "none")
+                                .with(railwaySleepersType.getProperty("east"), "low")
+                                .with(railwaySleepersType.getProperty("up"), false)),
+                        new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[2]), railwaySleepersType.getDefaultState()
+                                .with(railwaySleepersType.getProperty("north"), "none")
+                                .with(railwaySleepersType.getProperty("south"), "none")
+                                .with(railwaySleepersType.getProperty("west"), "low")
+                                .with(railwaySleepersType.getProperty("east"), "low")
+                                .with(railwaySleepersType.getProperty("up"), false)),
+                        new ReplaceArgs(new TypeOnlyMask(placeholderBlocks[4]), railwaySleepersType.getDefaultState()
+                                .with(railwaySleepersType.getProperty("north"), "none")
+                                .with(railwaySleepersType.getProperty("south"), "none")
+                                .with(railwaySleepersType.getProperty("west"), "low")
+                                .with(railwaySleepersType.getProperty("east"), "none")
+                                .with(railwaySleepersType.getProperty("up"), false))
+                ));
+            }
         }
-        player.chat("//re lime_glazed_terracotta air");
+
+        //we need to use the custom implementation as we cant provide the changed blocks to the default WE replace method
+        WorldEditUtil.replaceAll(session, replaceSteps);
     }
 
-    private Direction getDirection(Player player) {
-        float yaw = player.getLocation().getYaw();
-        if (yaw < 0) {
-            yaw += 360;
+    private void createOverheadLines(SelectionEditSession session, Direction playerDirection, BlockType middleBlockType) {
+        BlockType airPlaceholder = Converter.getBlockType("lime_glazed_terracotta");
+        BlockType overheadLineType = Converter.getBlockType("black_stained_glass_pane");
+        BlockState overheadLineState;
+        if (playerDirection.isHorizontal()) {
+            overheadLineState = overheadLineType.getDefaultState()
+                    .with(overheadLineType.getProperty("north"), false)
+                    .with(overheadLineType.getProperty("south"), false)
+                    .with(overheadLineType.getProperty("west"), true)
+                    .with(overheadLineType.getProperty("east"), true);
+        } else {
+            overheadLineState = overheadLineType.getDefaultState()
+                    .with(overheadLineType.getProperty("north"), true)
+                    .with(overheadLineType.getProperty("south"), true)
+                    .with(overheadLineType.getProperty("west"), false)
+                    .with(overheadLineType.getProperty("east"), false);
         }
-        if (yaw >= 315 || yaw < 45) {
-            return Direction.SOUTH;
-        } else if (yaw < 135) {
-            return Direction.WEST;
-        } else if (yaw < 225) {
-            return Direction.NORTH;
-        } else if (yaw < 315) {
-            return Direction.EAST;
+
+        List<ReplaceSideArgs> replaceSideSteps = this.getOverheadLineSteps(middleBlockType, overheadLineState, airPlaceholder);
+
+        for (ReplaceSideArgs args : replaceSideSteps) {
+            SideCommand.replaceSide(session, args);
         }
-        return Direction.NORTH;
+
+        // remove unneeded stacked blocks
+        WorldEditUtil.replaceAll(session, List.of(new ReplaceArgs(new TypeOnlyMask(airPlaceholder), Converter.getBlockType("air").getDefaultState())));
+    }
+
+    private List<ReplaceSideArgs> getOverheadLineSteps(BlockType middleBlockType, BlockState overheadLineState, BlockType airPlaceholder) {
+        List<ReplaceSideArgs> replaceSideSteps = new ArrayList<>();
+
+        // stack overhead line block up
+        replaceSideSteps.add(new ReplaceSideArgs(middleBlockType, overheadLineState, Direction.UP));
+        for (int i = 0; i < 5; i++) {
+            replaceSideSteps.add(new ReplaceSideArgs(overheadLineState, overheadLineState, Direction.UP));
+        }
+
+        // mark unneeded stacked blocks
+        replaceSideSteps.add(new ReplaceSideArgs(middleBlockType, airPlaceholder, Direction.UP));
+        for (int i = 0; i < 4; i++) {
+            replaceSideSteps.add(new ReplaceSideArgs(airPlaceholder, airPlaceholder, Direction.UP));
+        }
+        return replaceSideSteps;
     }
 
     @Override
@@ -175,33 +232,12 @@ public class RailCommand extends CommandWithBackup implements TabExecutor {
             return emptyList();
         }
         return switch (args.length) {
-            case 1 -> {
-                List<String> list = new ArrayList<>(TabUtil.getMaterialBlocks(args[0], true));
-                if("undo".contains(args[0].toLowerCase())) {
-                    list.add("undo");
-                }
-                yield list;
-            }
+            case 1 -> TabUtil.getMaterialBlocks(args[0], true);
             case 2 -> TabUtil.getWallBlocks(args[1]);
             case 3, 4 -> Arrays.asList("y", "n");
             default -> emptyList();
         };
     }
 
-    enum Direction {
-        NORTH (false),
-        SOUTH (false),
-        EAST (true),
-        WEST (true);
 
-        private final boolean horizontal;
-
-        Direction(boolean horizontal) {
-            this.horizontal = horizontal;
-        }
-
-        public boolean isHorizontal() {
-            return horizontal;
-        }
-    }
 }
