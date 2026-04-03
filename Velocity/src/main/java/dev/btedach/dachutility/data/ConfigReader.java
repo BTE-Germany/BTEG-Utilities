@@ -64,4 +64,14 @@ public class ConfigReader {
         return new AccountLinkConfig(jwtSecret, urlFormat);
     }
 
+    public ReportConfig readReportConfig() {
+        String webhookUrl = this.rootNode.node("report-webhook-url").getString();
+
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
+            this.logger.warn("Report configuration is invalid");
+        }
+
+        return new ReportConfig(webhookUrl);
+    }
+
 }

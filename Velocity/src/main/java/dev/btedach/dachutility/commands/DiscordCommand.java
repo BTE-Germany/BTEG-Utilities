@@ -9,7 +9,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 
 import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
-public class Discord implements SimpleCommand {
+public class DiscordCommand implements SimpleCommand {
     @Override
     public void execute(Invocation invocation) {
         CommandSource source = invocation.source();

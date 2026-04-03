@@ -12,7 +12,7 @@ import java.util.Optional;
 
 import static dev.btedach.dachutility.DACHUtility.sendMessage;
 
-public class Ping implements SimpleCommand {
+public class PingCommand implements SimpleCommand {
     @Override
     public void execute(Invocation invocation) {
         CommandSource source = invocation.source();

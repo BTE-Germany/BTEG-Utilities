@@ -2,7 +2,6 @@ package dev.btedach.dachutility;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandSource;
@@ -10,14 +9,13 @@ import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
-import com.velocitypowered.api.plugin.Dependency;
-import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.btedach.dachutility.commands.*;
 import dev.btedach.dachutility.data.ConfigReader;
 import dev.btedach.dachutility.listener.ChangeServerListener;
+import dev.btedach.dachutility.listener.ChatListener;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
@@ -25,15 +23,13 @@ import dev.btedach.dachutility.registry.RestartsRegistry;
 import dev.btedach.dachutility.restart.RestartsIDsManager;
 import dev.btedach.dachutility.data.AccountLinkConfig;
 import dev.btedach.dachutility.utils.Constants;
+import dev.btedach.dachutility.utils.chat.MessageCache;
 import lombok.Getter;
 import me.neznamy.tab.api.TabAPI;
 import me.neznamy.tab.api.TabPlayer;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -64,6 +60,7 @@ public class DACHUtility {
 
     private RestartsRegistry restartsRegistry;
     private MaintenancesRegistry maintenancesRegistry;
+    private MessageCache messageCache;
 
     private Algorithm algorithm;
     private AccountLinkConfig config;
@@ -86,6 +83,7 @@ public class DACHUtility {
         this.restartsRegistry = new RestartsRegistry(restartsIDsManager);
         this.maintenancesRegistry = new MaintenancesRegistry(this, this.dataDirectoryPath, "maintenances.json");
         this.maintenancesRegistry.loadMaintenances();
+        this.messageCache = new MessageCache();
 
         this.readAccountLinkConfig();
 
@@ -98,14 +96,14 @@ public class DACHUtility {
     private void registerListener() {
         EventManager eventManager = this.proxyServer.getEventManager();
         eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry));
-
+        eventManager.register(this, new ChatListener(this.messageCache));
     }
 
     private void registerCommands() {
         CommandManager commandManager = this.proxyServer.getCommandManager();
-        commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new Discord());
-        commandManager.register(commandManager.metaBuilder("ping").build(), new Ping());
-        //commandManager.register(commandManager.metaBuilder("report").build(), new Report()); Currently broken/not fully implemented
+        commandManager.register(commandManager.metaBuilder("dc").aliases("discord").build(), new DiscordCommand());
+        commandManager.register(commandManager.metaBuilder("ping").build(), new PingCommand());
+        commandManager.register(commandManager.metaBuilder("report").build(), new ReportCommand(this.proxyServer, this.configReader, this.messageCache));
         commandManager.register(commandManager.metaBuilder("maintenance").build(), new MaintenanceCommand(this.maintenancesRegistry, this.proxyServer));
         commandManager.register(commandManager.metaBuilder("bteg").build(), new RestartCommand(this, this.proxyServer, this.restartsRegistry, this.restartsIDsManager, this.configReader));
         commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plotserver").build(), new PlotsCommand());
@@ -114,13 +112,13 @@ public class DACHUtility {
 
     private void registerMaintenancePlaceholder() {
         Function<TabPlayer, String> placeholderFunction = tabPlayer -> {
-            if(maintenancesRegistry.getMaintenances().isEmpty()) {
+            if (maintenancesRegistry.getMaintenances().isEmpty()) {
                 return "";
             }
 
             StringBuilder builder = new StringBuilder();
 
-            for(Maintenance maintenance : maintenancesRegistry.getMaintenances().values()) {
+            for (Maintenance maintenance : maintenancesRegistry.getMaintenances().values()) {
                 if (!maintenance.proxy() && maintenance.servers().stream().noneMatch(server -> server.getPlayersConnected().contains((Player) tabPlayer.getPlayer()))) {
                     continue;
                 }
@@ -128,7 +126,10 @@ public class DACHUtility {
                 String time = maintenance.time().getHour() + ":" + (maintenance.time().getMinute() < 10 ? "0" : "") + maintenance.time().getMinute();
                 builder.append("\n§6").append(maintenance.name()).append(": §c").append(date).append(" §c").append(time);
             }
-            if(builder.isEmpty()) return "";
+
+            if (builder.isEmpty()) {
+                return "";
+            }
 
             builder.insert(0, "\n§6§lGeplante Wartungsarbeiten");
             builder.append("\n");
@@ -145,12 +146,12 @@ public class DACHUtility {
     }
 
     public void scheduleMaintenances(MaintenancesRegistry maintenancesRegistry) {
-        if(this.scheduledExecutorServiceMaintenance != null) {
+        if (this.scheduledExecutorServiceMaintenance != null) {
             this.scheduledExecutorServiceMaintenance.shutdownNow();
         }
         this.scheduledExecutorServiceMaintenance = new ScheduledThreadPoolExecutor(maintenancesRegistry.getMaintenances().size());
 
-        for(Maintenance maintenance : maintenancesRegistry.getMaintenances().values()) {
+        for (Maintenance maintenance : maintenancesRegistry.getMaintenances().values()) {
             ZonedDateTime now = LocalDateTime.now(ZoneId.of("Europe/Berlin")).atZone(ZoneId.of("Europe/Berlin"));
             long delay = ChronoUnit.MILLIS.between(now, maintenance.time());
             this.scheduledExecutorServiceMaintenance.schedule(new MaintenanceRunnable(maintenance), delay, TimeUnit.MILLISECONDS);
@@ -161,9 +162,9 @@ public class DACHUtility {
         LocalDate search = LocalDate.of(year, month, day);
         LocalDate today = LocalDate.now(ZoneId.of("Europe/Berlin"));
         LocalDate tomorrow = today.plusDays(1);
-        if(search.isEqual(today)) {
+        if (search.isEqual(today)) {
             return "Heute";
-        } else if(search.isEqual(tomorrow)) {
+        } else if (search.isEqual(tomorrow)) {
             return "Morgen";
         } else {
             return day + "." + (month < 10 ? "0" : "") + month + "." + year;

@@ -1,4 +1,4 @@
-package dev.btedach.dachutility.utils.messagebridge;
+package dev.btedach.dachutility.utils.chat;
 
 import lombok.Getter;
 
