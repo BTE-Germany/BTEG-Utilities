@@ -12,12 +12,14 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import dev.btedach.dachutility.commands.*;
 import dev.btedach.dachutility.data.ConfigReader;
 import dev.btedach.dachutility.listener.ChangeServerListener;
 import dev.btedach.dachutility.listener.ChatListener;
 import dev.btedach.dachutility.maintenance.Maintenance;
 import dev.btedach.dachutility.maintenance.MaintenanceRunnable;
+import dev.btedach.dachutility.registry.DndPlayersRegistry;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.registry.RestartsRegistry;
 import dev.btedach.dachutility.restart.RestartsIDsManager;
@@ -45,6 +47,7 @@ import java.util.function.Function;
 
 public class DACHUtility {
 
+    public static final MinecraftChannelIdentifier PLUGIN_CHANNEL = MinecraftChannelIdentifier.create("bteg", "utilities");
     @Getter
     public static DACHUtility instance;
 
@@ -60,6 +63,7 @@ public class DACHUtility {
 
     private RestartsRegistry restartsRegistry;
     private MaintenancesRegistry maintenancesRegistry;
+    DndPlayersRegistry dndPlayersRegistry;
     private MessageCache messageCache;
 
     private Algorithm algorithm;
@@ -83,9 +87,12 @@ public class DACHUtility {
         this.restartsRegistry = new RestartsRegistry(restartsIDsManager);
         this.maintenancesRegistry = new MaintenancesRegistry(this, this.dataDirectoryPath, "maintenances.json");
         this.maintenancesRegistry.loadMaintenances();
+        this.dndPlayersRegistry = new DndPlayersRegistry();
         this.messageCache = new MessageCache();
 
         this.readAccountLinkConfig();
+
+        this.proxyServer.getChannelRegistrar().register(PLUGIN_CHANNEL);
 
         registerCommands();
         registerListener();
@@ -95,7 +102,7 @@ public class DACHUtility {
 
     private void registerListener() {
         EventManager eventManager = this.proxyServer.getEventManager();
-        eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry));
+        eventManager.register(this, new ChangeServerListener(this.maintenancesRegistry, this.dndPlayersRegistry));
         eventManager.register(this, new ChatListener(this.messageCache));
     }
 
@@ -108,6 +115,7 @@ public class DACHUtility {
         commandManager.register(commandManager.metaBuilder("bteg").build(), new RestartCommand(this, this.proxyServer, this.restartsRegistry, this.restartsIDsManager, this.configReader));
         commandManager.register(commandManager.metaBuilder("plotsystem").aliases("plotserver").build(), new PlotsCommand());
         commandManager.register(commandManager.metaBuilder("accountlink").build(), new AccountLinkCommand());
+        commandManager.register(commandManager.metaBuilder("dnd").aliases("donotdisturb", "rec", "recording").build(), new DndCommand(this.proxyServer, this.dndPlayersRegistry));
     }
 
     private void registerMaintenancePlaceholder() {

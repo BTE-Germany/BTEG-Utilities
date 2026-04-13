@@ -1,6 +1,7 @@
 package de.btegermany.utilities.events;
 
 import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.DndPlayersRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -14,6 +15,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerJoinLeaveGamemode implements Listener {
+
+    private final DndPlayersRegistry dndPlayersRegistry;
+
+    public PlayerJoinLeaveGamemode(DndPlayersRegistry dndPlayersRegistry) {
+        this.dndPlayersRegistry = dndPlayersRegistry;
+    }
 
     @EventHandler
     public static void onPlayerJoin(@NotNull PlayerJoinEvent event) {
@@ -32,10 +39,12 @@ public class PlayerJoinLeaveGamemode implements Listener {
     }
 
     @EventHandler
-    public static void onPlayerQuit(@NotNull PlayerQuitEvent event) {
+    public void onPlayerQuit(@NotNull PlayerQuitEvent event) {
         Player player = event.getPlayer();
         player.setWalkSpeed(0.2F);
         player.setFlySpeed(0.1F);
+
+        this.dndPlayersRegistry.unregister(player);
     }
 
 

@@ -1,13 +1,16 @@
 package dev.btedach.dachutility.listener;
 
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import dev.btedach.dachutility.DACHUtility;
 import dev.btedach.dachutility.maintenance.Maintenance;
+import dev.btedach.dachutility.registry.DndPlayersRegistry;
 import dev.btedach.dachutility.registry.MaintenancesRegistry;
 import dev.btedach.dachutility.utils.Constants;
+import dev.btedach.dachutility.utils.DndUtils;
 import dev.btedach.dachutility.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -30,9 +33,11 @@ public class ChangeServerListener {
 
     public static ArrayList<UUID> playerSessionCache = new ArrayList<UUID>();
     private final MaintenancesRegistry maintenancesRegistry;
+    private final DndPlayersRegistry dndPlayersRegistry;
 
-    public ChangeServerListener(MaintenancesRegistry maintenancesRegistry) {
+    public ChangeServerListener(MaintenancesRegistry maintenancesRegistry, DndPlayersRegistry dndPlayersRegistry) {
         this.maintenancesRegistry = maintenancesRegistry;
+        this.dndPlayersRegistry = dndPlayersRegistry;
     }
 
     @Subscribe
@@ -103,4 +108,16 @@ public class ChangeServerListener {
             }
         }
     }
+
+    @Subscribe
+    public void onServerPostConnect(ServerPostConnectEvent event) {
+        Player player = event.getPlayer();
+
+        if (this.dndPlayersRegistry.isRegistered(player)) {
+            DndUtils.hideAllPlayersForPlayerExcept(player, this.dndPlayersRegistry.getExceptions(player));
+            sendMessage(player, Component.text("Dnd enabled.", NamedTextColor.GOLD));
+        }
+        DndUtils.hidePlayerForDndPlayers(player, this.dndPlayersRegistry);
+    }
+
 }
