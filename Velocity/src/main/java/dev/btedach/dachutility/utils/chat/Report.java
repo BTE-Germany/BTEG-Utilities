@@ -33,7 +33,7 @@ public record Report(Player reporter, Player reported, String reason, String web
     private void sendWebHook() throws IOException {
         WebHookBuilder.EmbedObject embedObject = new WebHookBuilder.EmbedObject();
         embedObject.addField("Reporter", this.reporter().getUsername(), false);
-        embedObject.addField("Reported", this.reported().getUsername() + " " + this.reporter().getUniqueId().toString(), false);
+        embedObject.addField("Reported", this.reported().getUsername() + " " + this.reported().getUniqueId().toString(), false);
         embedObject.addField("Reason", this.reason(), false);
 
         WebHookBuilder.newBuilder(this.webhookUrl)
