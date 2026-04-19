@@ -4,6 +4,7 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import de.btegermany.utilities.BTEGUtilities;
 import de.btegermany.utilities.util.DndPlayersRegistry;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +37,7 @@ public class PluginMessageListener implements org.bukkit.plugin.messaging.Plugin
                     return;
                 }
 
-                this.dndPlayersRegistry.register(player);
+                this.dndPlayersRegistry.register(playerReceived);
 
                 if (uuidsPlayersToHideRaw.isEmpty()) {
                     return;
@@ -49,7 +50,7 @@ public class PluginMessageListener implements org.bukkit.plugin.messaging.Plugin
                         continue;
                     }
 
-                    playerReceived.hidePlayer(this.plugin, playerToHide);
+                    this.hidePlayerCompletely(playerReceived, playerToHide);
                 }
             }
 
@@ -72,7 +73,7 @@ public class PluginMessageListener implements org.bukkit.plugin.messaging.Plugin
                         continue;
                     }
 
-                    player1.hidePlayer(this.plugin, playerToHide);
+                    this.hidePlayerCompletely(player1, playerToHide);
                 }
             }
 
@@ -83,12 +84,24 @@ public class PluginMessageListener implements org.bukkit.plugin.messaging.Plugin
                     return;
                 }
 
-                this.dndPlayersRegistry.unregister(player);
+                this.dndPlayersRegistry.unregister(playerReceived);
 
                 for (Player playerToShow : this.plugin.getServer().getOnlinePlayers()) {
                     playerReceived.showPlayer(this.plugin, playerToShow);
+
+                    for (Entity passenger : playerToShow.getPassengers()) {
+                        playerReceived.showEntity(this.plugin, passenger);
+                    }
                 }
             }
+        }
+    }
+
+    private void hidePlayerCompletely(Player player, Player playerToHide) {
+        player.hidePlayer(this.plugin, playerToHide);
+
+        for (Entity passenger : playerToHide.getPassengers()) {
+            player.hideEntity(this.plugin, passenger);
         }
     }
 
