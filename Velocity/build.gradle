@@ -3,6 +3,7 @@ plugins {
     id 'eclipse'
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.1.8'
     id "com.gradleup.shadow" version "9.3.1"
+    id("io.freefair.lombok") version "9.5.0"
 }
 
 group = 'dev.btedach'
@@ -36,8 +37,6 @@ dependencies {
     testImplementation("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     implementation('org.json:json:20231013')
     implementation('org.slf4j:slf4j-simple:2.0.0')
-    compileOnly('org.projectlombok:lombok:1.18.30')
-    annotationProcessor('org.projectlombok:lombok:1.18.30')
     compileOnly 'com.github.NEZNAMY:TAB-API:5.4.0'
     implementation 'com.auth0:java-jwt:4.5.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
