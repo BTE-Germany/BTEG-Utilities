@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import static java.util.Collections.emptyList;
 import java.util.List;
+import java.util.Locale;
 
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
@@ -43,7 +44,7 @@ public class RailCommand implements TabExecutor {
         }
         if (args.length == 0) {
             player.sendMessage(BTEGUtilities.PREFIX + "Usage:");
-            player.sendMessage(BTEGUtilities.PREFIX + "//rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>");
+            player.sendMessage(BTEGUtilities.PREFIX + "//rail <Block-ID> <Wall-ID-railway-sleepers> <overhead-line[n,glass,tram_single,tram_double]> <rails-in-ground[y,n]>");
             return true;
         }
 
@@ -63,8 +64,11 @@ public class RailCommand implements TabExecutor {
             return true;
         }
 
-        if (args.length >= 3 && !(args[2].equalsIgnoreCase("y") || args[2].equalsIgnoreCase("n"))) {
-            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid generate-overhead-line option: " + args[2] + "§c. Use y or n.");
+        String overheadLine = args.length >= 3 ? args[2].toLowerCase(Locale.ROOT) : "none";
+        if (!(overheadLine.equals("n") || overheadLine.equals("none") || overheadLine.equals("y")
+                || overheadLine.equals("glass") || overheadLine.equals("tram_single") || overheadLine.equals("tram_double"))) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid overhead-line option: " + args[2]
+                    + "§c. Use n, glass, tram_single, or tram_double.");
             return true;
         }
         if (args.length >= 4 && !(args[3].equalsIgnoreCase("y") || args[3].equalsIgnoreCase("n"))) {
@@ -72,7 +76,6 @@ public class RailCommand implements TabExecutor {
             return true;
         }
 
-        boolean overheadLine = args.length >= 3 && args[2].equalsIgnoreCase("y");
         boolean inGround = args.length >= 4 && args[3].equalsIgnoreCase("y");
 
         WorldEditUtil.findSelection(player, session -> {
@@ -81,9 +84,9 @@ public class RailCommand implements TabExecutor {
             BaseBlock anvils = new BaseBlock(anvilType.getDefaultState().with(anvilType.getProperty("facing"),
                     (playerDirection.isHorizontal() ? com.sk89q.worldedit.util.Direction.EAST : com.sk89q.worldedit.util.Direction.NORTH)));
 
-            if (overheadLine) {
+            if (!overheadLine.equals("n") && !overheadLine.equals("none")) {
                 session.region().expand(BlockVector3.at(0, 8, 0));
-                this.createOverheadLines(session, playerDirection, middleBlockType);
+                this.createOverheadLines(session, playerDirection, middleBlockType, overheadLine);
             }
 
             this.createRails(session, playerDirection, anvils, middleBlockType, railwaySleepersMaterial, inGround);
@@ -209,25 +212,30 @@ public class RailCommand implements TabExecutor {
         WorldEditUtil.replaceAll(session, replaceSteps);
     }
 
-    private void createOverheadLines(SelectionEditSession session, Direction playerDirection, BlockType middleBlockType) {
+    private void createOverheadLines(SelectionEditSession session, Direction playerDirection, BlockType middleBlockType, String overheadLine) {
         BlockType airPlaceholder = Converter.getBlockType("lime_glazed_terracotta");
-        BlockType overheadLineType = Converter.getBlockType("black_stained_glass_pane");
-        BlockState overheadLineState;
-        if (playerDirection.isHorizontal()) {
-            overheadLineState = overheadLineType.getDefaultState()
-                    .with(overheadLineType.getProperty("north"), false)
-                    .with(overheadLineType.getProperty("south"), false)
-                    .with(overheadLineType.getProperty("west"), true)
-                    .with(overheadLineType.getProperty("east"), true);
+        List<ReplaceSideArgs> replaceSideSteps;
+        if (overheadLine.equals("tram_single") || overheadLine.equals("tram_double")) {
+            this.createTramLines(session, playerDirection, middleBlockType, overheadLine.equals("tram_double"));
+            return;
         } else {
-            overheadLineState = overheadLineType.getDefaultState()
-                    .with(overheadLineType.getProperty("north"), true)
-                    .with(overheadLineType.getProperty("south"), true)
-                    .with(overheadLineType.getProperty("west"), false)
-                    .with(overheadLineType.getProperty("east"), false);
+            BlockType overheadLineType = Converter.getBlockType("black_stained_glass_pane");
+            BlockState overheadLineState;
+            if (playerDirection.isHorizontal()) {
+                overheadLineState = overheadLineType.getDefaultState()
+                        .with(overheadLineType.getProperty("north"), false)
+                        .with(overheadLineType.getProperty("south"), false)
+                        .with(overheadLineType.getProperty("west"), true)
+                        .with(overheadLineType.getProperty("east"), true);
+            } else {
+                overheadLineState = overheadLineType.getDefaultState()
+                        .with(overheadLineType.getProperty("north"), true)
+                        .with(overheadLineType.getProperty("south"), true)
+                        .with(overheadLineType.getProperty("west"), false)
+                        .with(overheadLineType.getProperty("east"), false);
+            }
+            replaceSideSteps = this.getOverheadLineSteps(middleBlockType, overheadLineState, airPlaceholder);
         }
-
-        List<ReplaceSideArgs> replaceSideSteps = this.getOverheadLineSteps(middleBlockType, overheadLineState, airPlaceholder);
 
         for (ReplaceSideArgs args : replaceSideSteps) {
             SideCommand.replaceSide(session, args);
@@ -235,6 +243,52 @@ public class RailCommand implements TabExecutor {
 
         // remove unneeded stacked blocks
         WorldEditUtil.replaceAll(session, List.of(new ReplaceArgs(new TypeOnlyMask(airPlaceholder), Converter.getBlockType("air").getDefaultState())));
+    }
+
+    private void createTramLines(SelectionEditSession session, Direction playerDirection, BlockType middleBlockType,
+                                 boolean doubleLine) {
+        BlockType buttonType = Converter.getBlockType("polished_blackstone_button");
+        BlockState airState = Converter.getBlockType("air").getDefaultState();
+        com.sk89q.worldedit.util.Direction buttonFacing = switch (playerDirection) {
+            case NORTH -> com.sk89q.worldedit.util.Direction.EAST;
+            case SOUTH -> com.sk89q.worldedit.util.Direction.EAST;
+            case EAST -> com.sk89q.worldedit.util.Direction.NORTH;
+            case WEST -> com.sk89q.worldedit.util.Direction.NORTH;
+            default -> com.sk89q.worldedit.util.Direction.NORTH;
+        };
+        BlockState ceilingButton = buttonType.getDefaultState()
+                .with(buttonType.getProperty("face"), "ceiling")
+                .with(buttonType.getProperty("facing"), buttonFacing);
+        BlockState floorButton = ceilingButton.with(buttonType.getProperty("face"), "floor");
+
+        for (int x = session.region().getMinimumPoint().x(); x <= session.region().getMaximumPoint().x(); x++) {
+            for (int y = session.region().getMinimumPoint().y(); y <= session.region().getMaximumPoint().y(); y++) {
+                for (int z = session.region().getMinimumPoint().z(); z <= session.region().getMaximumPoint().z(); z++) {
+                    BlockVector3 middlePosition = BlockVector3.at(x, y, z);
+                    if (!session.region().contains(middlePosition)
+                            || !session.editSession().getBlock(middlePosition).getBlockType().equals(middleBlockType)) {
+                        continue;
+                    }
+
+                    for (int offset = 1; offset <= 4; offset++) {
+                        this.setBlock(session, x, y + offset, z, airState);
+                    }
+                    this.setBlock(session, x, y + 5, z, ceilingButton);
+                    if (doubleLine) {
+                        this.setBlock(session, x, y + 6, z, airState);
+                        this.setBlock(session, x, y + 7, z, floorButton);
+                    }
+                }
+            }
+        }
+    }
+
+    private void setBlock(SelectionEditSession session, int x, int y, int z, BlockState blockState) {
+        BlockVector3 position = BlockVector3.at(x, y, z);
+        if (session.region().contains(position)) {
+            session.editSession().setBlock(x, y, z, blockState);
+            session.changedBlocks().put(position, blockState);
+        }
     }
 
     private List<ReplaceSideArgs> getOverheadLineSteps(BlockType middleBlockType, BlockState overheadLineState, BlockType airPlaceholder) {
@@ -262,7 +316,8 @@ public class RailCommand implements TabExecutor {
         return switch (args.length) {
             case 1 -> TabUtil.getMaterialBlocks(args[0], true);
             case 2 -> TabUtil.getWallBlocks(args[1]);
-            case 3, 4 -> Arrays.asList("y", "n");
+            case 3 -> Arrays.asList("none", "glass", "tram_single", "tram_double");
+            case 4 -> Arrays.asList("y", "n");
             default -> emptyList();
         };
     }

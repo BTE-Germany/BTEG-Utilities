@@ -42,7 +42,7 @@ commands:
         - /cover
   rail:
     description: Builds rails
-    usage: /rail <Block-ID> <Wall-ID-railway-sleepers> <generate-overhead-line[y,n]> <rails-in-ground[y,n]>
+    usage: /rail <Block-ID> <Wall-ID-railway-sleepers> <overhead-line[n,glass,tram_single,tram_double]> <rails-in-ground[y,n]>
     aliases:
       - /rail
   connect:
