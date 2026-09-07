@@ -1,16 +1,8 @@
 package de.btegermany.utilities.commands;
 
-import com.sk89q.worldedit.*;
-import com.sk89q.worldedit.math.BlockVector2;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Polygonal2DRegion;
-import com.sk89q.worldedit.world.block.*;
-import de.btegermany.utilities.BTEGUtilities;
-import de.btegermany.utilities.util.*;
-import de.btegermany.utilities.util.worldedit.Converter;
-import de.btegermany.utilities.util.worldedit.EditSessionWithHistory;
-import de.btegermany.utilities.util.worldedit.SelectionEditSession;
-import de.btegermany.utilities.util.worldedit.WorldEditUtil;
+import static java.util.Collections.emptyList;
+import java.util.List;
+
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -19,9 +11,22 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.EmptyClipboardException;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Polygonal2DRegion;
+import com.sk89q.worldedit.world.block.BlockState;
+import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
 
-import static java.util.Collections.emptyList;
+import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.TabUtil;
+import de.btegermany.utilities.util.worldedit.Converter;
+import de.btegermany.utilities.util.worldedit.EditSessionWithHistory;
+import de.btegermany.utilities.util.worldedit.SelectionEditSession;
+import de.btegermany.utilities.util.worldedit.WorldEditUtil;
 
 
 public class ConnectCommand implements TabExecutor {
@@ -38,6 +43,16 @@ public class ConnectCommand implements TabExecutor {
         if (args.length != 1) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cWrong usage");
             player.sendMessage(BTEGUtilities.PREFIX + "/connect <Block-ID>");
+            return true;
+        }
+
+        if (!args[0].equalsIgnoreCase("plot")) {
+            try {
+                Converter.getBlockType(args[0], player);
+            } catch (RuntimeException exception) {
+                player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
+                return true;
+            }
         }
 
         try {

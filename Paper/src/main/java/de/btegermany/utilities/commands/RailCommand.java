@@ -1,15 +1,11 @@
 package de.btegermany.utilities.commands;
 
 
-import com.sk89q.worldedit.math.BlockVector3;
+import java.util.ArrayList;
+import java.util.Arrays;
+import static java.util.Collections.emptyList;
+import java.util.List;
 
-import com.sk89q.worldedit.world.block.BaseBlock;
-import com.sk89q.worldedit.world.block.BlockState;
-import com.sk89q.worldedit.world.block.BlockType;
-import de.btegermany.utilities.BTEGUtilities;
-import de.btegermany.utilities.util.*;
-
-import de.btegermany.utilities.util.worldedit.*;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -18,11 +14,20 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.world.block.BaseBlock;
+import com.sk89q.worldedit.world.block.BlockState;
+import com.sk89q.worldedit.world.block.BlockType;
 
-import static java.util.Collections.emptyList;
+import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.Direction;
+import de.btegermany.utilities.util.TabUtil;
+import de.btegermany.utilities.util.worldedit.Converter;
+import de.btegermany.utilities.util.worldedit.ReplaceArgs;
+import de.btegermany.utilities.util.worldedit.ReplaceSideArgs;
+import de.btegermany.utilities.util.worldedit.SelectionEditSession;
+import de.btegermany.utilities.util.worldedit.TypeOnlyMask;
+import de.btegermany.utilities.util.worldedit.WorldEditUtil;
 
 
 public class RailCommand implements TabExecutor {
@@ -42,8 +47,31 @@ public class RailCommand implements TabExecutor {
             return true;
         }
 
-        BlockType middleBlockType = Converter.getBlockType(args[0], player);
         String railwaySleepersMaterial = args.length >= 2 ? args[1] : "andesite_wall";
+        BlockType middleBlockType;
+        try {
+            middleBlockType = Converter.getBlockType(args[0], player);
+        } catch (RuntimeException exception) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
+            return true;
+        }
+
+        boolean validRailwaySleepersMaterial = TabUtil.getWallBlocks(railwaySleepersMaterial).stream()
+                .anyMatch(wallType -> wallType.equalsIgnoreCase(railwaySleepersMaterial));
+        if (!validRailwaySleepersMaterial) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid railway sleepers block type: " + railwaySleepersMaterial);
+            return true;
+        }
+
+        if (args.length >= 3 && !(args[2].equalsIgnoreCase("y") || args[2].equalsIgnoreCase("n"))) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid generate-overhead-line option: " + args[2] + "§c. Use y or n.");
+            return true;
+        }
+        if (args.length >= 4 && !(args[3].equalsIgnoreCase("y") || args[3].equalsIgnoreCase("n"))) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid rails-in-ground option: " + args[3] + "§c. Use y or n.");
+            return true;
+        }
+
         boolean overheadLine = args.length >= 3 && args[2].equalsIgnoreCase("y");
         boolean inGround = args.length >= 4 && args[3].equalsIgnoreCase("y");
 

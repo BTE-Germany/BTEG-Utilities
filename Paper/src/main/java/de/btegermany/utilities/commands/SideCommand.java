@@ -1,14 +1,11 @@
 package de.btegermany.utilities.commands;
 
-import com.sk89q.worldedit.*;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
+import static java.util.Collections.emptyList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
-import com.sk89q.worldedit.world.block.BlockState;
-import com.sk89q.worldedit.world.block.BlockType;
-import de.btegermany.utilities.BTEGUtilities;
-import de.btegermany.utilities.util.*;
-import de.btegermany.utilities.util.worldedit.*;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -17,9 +14,21 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import com.sk89q.worldedit.EmptyClipboardException;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.world.block.BlockState;
+import com.sk89q.worldedit.world.block.BlockType;
 
-import static java.util.Collections.emptyList;
+import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.Direction;
+import de.btegermany.utilities.util.TabUtil;
+import de.btegermany.utilities.util.worldedit.Converter;
+import de.btegermany.utilities.util.worldedit.ReplaceSideArgs;
+import de.btegermany.utilities.util.worldedit.SelectionEditSession;
+import de.btegermany.utilities.util.worldedit.TypeOnlyMask;
+import de.btegermany.utilities.util.worldedit.WorldEditUtil;
 
 public class SideCommand implements TabExecutor {
 
@@ -40,9 +49,30 @@ public class SideCommand implements TabExecutor {
             return true;
         }
 
-        BlockType preBlock = Converter.getBlockType(args[0].toUpperCase(), player);
-        BlockType postBlock = Converter.getBlockType(args[1].toUpperCase(), player);
-        Direction direction = Direction.fromInput(args[2]);
+        BlockType preBlock;
+        try {
+            preBlock = Converter.getBlockType(args[0].toUpperCase(), player);
+        } catch (RuntimeException exception) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
+            return true;
+        }
+
+        BlockType postBlock;
+        try {
+            postBlock = Converter.getBlockType(args[1].toUpperCase(), player);
+        } catch (RuntimeException exception) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[1]);
+            return true;
+        }
+
+        Direction direction;
+        try {
+            direction = Direction.fromInput(args[2].toLowerCase(Locale.ROOT));
+        } catch (RuntimeException exception) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid direction: " + args[2] + "§c. Use n, e, s, w, u, or d.");
+            return true;
+        }
+
         boolean ignoreSameBlock = false;
         TypeOnlyMask mask = new TypeOnlyMask(true);
 
@@ -63,8 +93,13 @@ public class SideCommand implements TabExecutor {
                     blocksString = args[4].substring("!".length());
                 }
 
-                BlockType[] blockTypes = WorldEditUtil.getBlockTypesFromInput(player, blocksString);
-                mask = new TypeOnlyMask(inverse, blockTypes);
+                try {
+                    BlockType[] blockTypes = WorldEditUtil.getBlockTypesFromInput(player, blocksString);
+                    mask = new TypeOnlyMask(inverse, blockTypes);
+                } catch (RuntimeException exception) {
+                    player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type in mask: " + args[4]);
+                    return true;
+                }
             }
         }
         try {
