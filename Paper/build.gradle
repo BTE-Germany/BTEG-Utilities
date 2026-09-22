@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.btegermany'
-version = '2.3.2-SNAPSHOT'
+version = '2.3.3-SNAPSHOT'
 
 repositories {
     mavenCentral()

@@ -8,6 +8,8 @@ Developed for BTE Germany
 - /lidar [save] -> Regens a region and pastes the surface block before the regen
 - //side [Block-ID] [Block-ID] [Direction(n,o,s,w)] -> Replaces blocks like worldedit with < but sideways
 - //surfaceline / //sline [Block-ID] -> Like worldedit's //line, but the line follows the terrain surface instead of being perfectly straight
+- //surfaceconnect / //sconnect [Block-ID] -> Like //connect, but every line follows the terrain surface instead of being perfectly straight
+- //skew [Amount] [Direction(n,e,s,w)] [Side(n,e,s,w)] -> Skews a cuboid selection along a horizontal axis, following the same line algorithm as worldedit's //line, so straight facades can be bent to follow a diagonal outline
 - /speed [1-5]
 - /bteg server 1,2,5 restart [seconds,empty] -> Restarts server with countdown (needs bungeecord expansion)
 

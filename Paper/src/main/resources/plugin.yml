@@ -64,3 +64,8 @@ commands:
       - sconnect
       - /surfaceconnect
       - /sconnect
+  skew:
+    description: Skews a cuboid selection, moving one side while the opposite side stays in place
+    usage: //skew <Amount> <Direction[n,e,s,w]> <Side[n,e,s,w]>
+    aliases:
+      - /skew

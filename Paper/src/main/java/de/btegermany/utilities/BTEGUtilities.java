@@ -37,6 +37,7 @@ public final class BTEGUtilities extends JavaPlugin {
         Objects.requireNonNull(getCommand("regionfile")).setExecutor(new RegionFileCommand());
         Objects.requireNonNull(getCommand("surfaceline")).setExecutor(new SurfaceLineCommand());
         Objects.requireNonNull(getCommand("surfaceconnect")).setExecutor(new SurfaceConnectCommand());
+        Objects.requireNonNull(getCommand("skew")).setExecutor(new SkewCommand());
 
         this.getServer().getMessenger().registerIncomingPluginChannel(this, PLUGIN_CHANNEL, new PluginMessageListener(this, this.dndPlayersRegistry));
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
