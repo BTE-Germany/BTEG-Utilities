@@ -1,6 +1,7 @@
 package de.btegermany.utilities.util;
 
 import com.destroystokyo.paper.MaterialSetTag;
+import de.btegermany.utilities.util.worldedit.Converter;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
@@ -27,6 +28,19 @@ public class TabUtil {
         return getMaterialBlocks(arg, hand).stream().map(block -> startOfArg + block).toList();
     }
 
+    /**
+     * Like {@link #getMaterialBlocks(String, boolean)}, but also suggests the WorldEdit/FAWE
+     * block state bracket syntax (e.g. completing {@code stone_stairs[faci} to
+     * {@code stone_stairs[facing=}), for use with block-ID arguments that support block states.
+     */
+    public static List<String> getBlockPatternSuggestions(String arg, boolean hand) {
+        List<String> suggestions = new ArrayList<>(Converter.getBlockSuggestions(arg));
+        if (hand && !arg.contains("[") && "hand".startsWith(arg.toLowerCase())) {
+            suggestions.add("hand");
+        }
+        return suggestions;
+    }
+
     public static List<String> getWallBlocks(String arg) {
         return MaterialSetTag.WALLS.getValues().stream()
                 .map(material -> material.toString().toLowerCase())
@@ -34,3 +48,4 @@ public class TabUtil {
                 .toList();
     }
 }
+

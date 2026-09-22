@@ -13,6 +13,8 @@ Developed for BTE Germany
 - /speed [1-5]
 - /bteg server 1,2,5 restart [seconds,empty] -> Restarts server with countdown (needs bungeecord expansion)
 
+All `[Block-ID]` arguments above, as well as //connect's and //side's, support WorldEdit/FAWE's block state syntax (e.g. `stone_stairs[facing=east,half=top]`), including tab-completion for property keys/values and tolerating a missing trailing `]`.
+
 ### Misc
 
 - Custom Join-/Leave Message

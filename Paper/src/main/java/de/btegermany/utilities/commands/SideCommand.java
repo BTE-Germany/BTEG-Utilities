@@ -51,15 +51,15 @@ public class SideCommand implements TabExecutor {
 
         BlockType preBlock;
         try {
-            preBlock = Converter.getBlockType(args[0].toUpperCase(), player);
+            preBlock = Converter.getBlockType(args[0], player);
         } catch (RuntimeException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
             return true;
         }
 
-        BlockType postBlock;
+        BlockState postBlockState;
         try {
-            postBlock = Converter.getBlockType(args[1].toUpperCase(), player);
+            postBlockState = Converter.getBlockState(args[1], player);
         } catch (RuntimeException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[1]);
             return true;
@@ -103,7 +103,7 @@ public class SideCommand implements TabExecutor {
             }
         }
         try {
-            ReplaceSideArgs replaceSideArgs = new ReplaceSideArgs(preBlock, postBlock, direction, ignoreSameBlock, mask);
+            ReplaceSideArgs replaceSideArgs = new ReplaceSideArgs(preBlock, postBlockState, direction, ignoreSameBlock, mask);
             WorldEditUtil.findSelection(player, session -> {
                 SideCommand.replaceSide(session, replaceSideArgs);
 
@@ -206,7 +206,8 @@ public class SideCommand implements TabExecutor {
         }
         // First argument: target
         return switch (args.length) {
-            case 1, 2 -> TabUtil.getMaterialBlocks(args[args.length - 1], true);
+            case 1 -> TabUtil.getMaterialBlocks(args[0], true);
+            case 2 -> TabUtil.getBlockPatternSuggestions(args[1], true);
 
             case 3 -> {
                 if (!args[args.length - 1].isEmpty()) {

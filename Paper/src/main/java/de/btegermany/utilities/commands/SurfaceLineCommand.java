@@ -5,7 +5,6 @@ import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.world.block.BlockState;
-import com.sk89q.worldedit.world.block.BlockType;
 import de.btegermany.utilities.BTEGUtilities;
 import de.btegermany.utilities.util.TabUtil;
 import de.btegermany.utilities.util.worldedit.Converter;
@@ -46,14 +45,13 @@ public class SurfaceLineCommand implements TabExecutor {
             return true;
         }
 
-        BlockType blockType;
+        BlockState blockState;
         try {
-            blockType = Converter.getBlockType(args[0], player);
+            blockState = Converter.getBlockState(args[0], player);
         } catch (RuntimeException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
             return true;
         }
-        BlockState blockState = blockType.getDefaultState();
 
         try {
             WorldEditUtil.findSelection(player, session -> this.drawSurfaceLine(session, blockState));
@@ -98,6 +96,6 @@ public class SurfaceLineCommand implements TabExecutor {
         if (!sender.hasPermission("bteg.builder") || args.length != 1) {
             return Collections.emptyList();
         }
-        return TabUtil.getMaterialBlocks(args[0], true);
+        return TabUtil.getBlockPatternSuggestions(args[0], true);
     }
 }

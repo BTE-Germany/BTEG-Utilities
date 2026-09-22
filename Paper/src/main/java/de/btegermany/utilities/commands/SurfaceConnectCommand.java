@@ -19,7 +19,6 @@ import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.world.block.BlockState;
-import com.sk89q.worldedit.world.block.BlockType;
 
 import de.btegermany.utilities.BTEGUtilities;
 import de.btegermany.utilities.util.TabUtil;
@@ -50,14 +49,13 @@ public class SurfaceConnectCommand implements TabExecutor {
             return true;
         }
 
-        BlockType blockType;
+        BlockState blockState;
         try {
-            blockType = Converter.getBlockType(args[0], player);
+            blockState = Converter.getBlockState(args[0], player);
         } catch (RuntimeException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
             return true;
         }
-        BlockState blockState = blockType.getDefaultState();
 
         try {
             WorldEditUtil.findSelection(player, session -> this.drawSurfaceConnection(session, blockState));
@@ -115,7 +113,7 @@ public class SurfaceConnectCommand implements TabExecutor {
             return emptyList();
         }
         if (args.length == 1) {
-            return TabUtil.getMaterialBlocks(args[0], true);
+            return TabUtil.getBlockPatternSuggestions(args[0], true);
         }
         return emptyList();
     }

@@ -18,7 +18,6 @@ import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.world.block.BlockState;
-import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
 import de.btegermany.utilities.BTEGUtilities;
@@ -48,7 +47,7 @@ public class ConnectCommand implements TabExecutor {
 
         if (!args[0].equalsIgnoreCase("plot")) {
             try {
-                Converter.getBlockType(args[0], player);
+                Converter.getBlockState(args[0], player);
             } catch (RuntimeException exception) {
                 player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type: " + args[0]);
                 return true;
@@ -78,15 +77,14 @@ public class ConnectCommand implements TabExecutor {
         List<BlockVector2> points = polyRegion.getPoints();
         int y = polyRegion.getMaximumPoint().y();
 
-        BlockType blockType;
+        BlockState blockState;
         if (plot) {
-            blockType = BlockTypes.get("lapis_block");
+            blockState = BlockTypes.get("lapis_block").getDefaultState();
         } else {
-            blockType = Converter.getBlockType(pattern, player);
+            blockState = Converter.getBlockState(pattern, player);
         }
 
-        assert blockType != null;
-        BlockState blockState = blockType.getDefaultState();
+        assert blockState != null;
 
         for (int i = 0; points.size() > i; i++) {
             try (EditSessionWithHistory editSessionWithHistory = new EditSessionWithHistory(session.localSession(), player)) {
@@ -121,7 +119,7 @@ public class ConnectCommand implements TabExecutor {
         }
         // First argument: target
         if (args.length == 1) {
-            return TabUtil.getMaterialBlocks(args[0], true);
+            return TabUtil.getBlockPatternSuggestions(args[0], true);
         }
 
         return emptyList();
