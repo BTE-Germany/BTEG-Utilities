@@ -3,6 +3,10 @@ package de.btegermany.utilities.commands;
 import static java.util.Collections.emptyList;
 import java.util.List;
 
+import com.fastasyncworldedit.core.function.mask.InverseMask;
+import com.sk89q.worldedit.function.mask.BlockTypeMask;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.function.pattern.Pattern;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -79,7 +83,8 @@ public class ConnectCommand implements TabExecutor {
 
         BlockState blockState;
         if (plot) {
-            blockState = BlockTypes.get("lapis_block").getDefaultState();
+            assert BlockTypes.LAPIS_BLOCK != null;
+            blockState = BlockTypes.LAPIS_BLOCK.getDefaultState();
         } else {
             blockState = Converter.getBlockState(pattern, player);
         }
@@ -90,6 +95,16 @@ public class ConnectCommand implements TabExecutor {
         // connection only takes one operation instead of one per line segment.
         try (EditSessionWithHistory editSessionWithHistory = new EditSessionWithHistory(session.localSession(), player)) {
             EditSession editSession = editSessionWithHistory.getWeEditSession();
+
+            if (plot) {
+                BlockTypeMask lapisMask = new BlockTypeMask(editSession, BlockTypes.LAPIS_BLOCK);
+                Mask nonLapisMask = new InverseMask(lapisMask);
+
+                assert BlockTypes.CLAY != null;
+                Pattern clayPattern = BlockTypes.CLAY.getDefaultState();
+
+                editSession.replaceBlocks(session.region(), nonLapisMask, clayPattern);
+            }
 
             for (int i = 0; points.size() > i; i++) {
                 BlockVector3 vector = BlockVector3.at(points.get(i).x(), y, points.get(i).z());
@@ -104,14 +119,12 @@ public class ConnectCommand implements TabExecutor {
         }
 
         if (plot) {
-            player.chat("//re !22 82");
             player.sendMessage(BTEGUtilities.PREFIX + "Successfully prepared plot!");
         } else {
             player.sendMessage(BTEGUtilities.PREFIX + "Blocks successfully connected!");
         }
 
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-
     }
 
     @Override
