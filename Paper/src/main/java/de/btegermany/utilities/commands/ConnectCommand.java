@@ -86,10 +86,12 @@ public class ConnectCommand implements TabExecutor {
 
         assert blockState != null;
 
-        for (int i = 0; points.size() > i; i++) {
-            try (EditSessionWithHistory editSessionWithHistory = new EditSessionWithHistory(session.localSession(), player)) {
-                EditSession editSession = editSessionWithHistory.getWeEditSession();
+        // Use a single session for all lines, so drawing (and, if needed, undoing) the whole
+        // connection only takes one operation instead of one per line segment.
+        try (EditSessionWithHistory editSessionWithHistory = new EditSessionWithHistory(session.localSession(), player)) {
+            EditSession editSession = editSessionWithHistory.getWeEditSession();
 
+            for (int i = 0; points.size() > i; i++) {
                 BlockVector3 vector = BlockVector3.at(points.get(i).x(), y, points.get(i).z());
                 BlockVector3 vector1;
                 if (i == points.size() - 1) {
