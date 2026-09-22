@@ -50,3 +50,17 @@ commands:
     usage: /connect <Block-ID>
     aliases:
       - /connect
+  surfaceline:
+    description: Draws a line that follows the terrain surface
+    usage: //surfaceline <Block-ID>
+    aliases:
+      - sline
+      - /surfaceline
+      - /sline
+  surfaceconnect:
+    description: Connects all points of a poly selection with lines that follow the terrain surface
+    usage: //surfaceconnect <Block-ID>
+    aliases:
+      - sconnect
+      - /surfaceconnect
+      - /sconnect
