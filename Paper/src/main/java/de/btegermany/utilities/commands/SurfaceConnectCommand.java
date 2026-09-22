@@ -1,6 +1,8 @@
 package de.btegermany.utilities.commands;
 
 import static java.util.Collections.emptyList;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,8 +46,8 @@ public class SurfaceConnectCommand implements TabExecutor {
             player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //surfaceconnect");
             return true;
         }
-        if (args.length != 1) {
-            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //surfaceconnect <Block-ID>");
+        if (args.length < 1 || args.length > 2) {
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //surfaceconnect <Block-ID> [open|closed]");
             return true;
         }
 
@@ -57,8 +59,10 @@ public class SurfaceConnectCommand implements TabExecutor {
             return true;
         }
 
+        var open = args.length == 2 && args [1].equalsIgnoreCase("open");
+
         try {
-            WorldEditUtil.findSelection(player, session -> this.drawSurfaceConnection(session, blockState));
+            WorldEditUtil.findSelection(player, session -> this.drawSurfaceConnection(session, blockState, open));
         } catch (MaxChangedBlocksException | EmptyClipboardException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred while connecting the points.");
             exception.printStackTrace();
@@ -67,7 +71,7 @@ public class SurfaceConnectCommand implements TabExecutor {
         return true;
     }
 
-    private void drawSurfaceConnection(SelectionEditSession session, BlockState blockState) {
+    private void drawSurfaceConnection(SelectionEditSession session, BlockState blockState, boolean open) {
         Player player = session.player();
 
         if (!(session.region() instanceof Polygonal2DRegion polyRegion)) {
@@ -88,7 +92,9 @@ public class SurfaceConnectCommand implements TabExecutor {
         int placedBlocks = 0;
         int failedBlocks = 0;
 
-        for (int i = 0; i < points.size(); i++) {
+        int maxCount = open ? points.size() - 1 : points.size();
+
+        for (int i = 0; i < maxCount; i++) {
             BlockVector2 point = points.get(i);
             BlockVector2 nextPoint = points.get((i + 1) % points.size());
 
@@ -114,6 +120,9 @@ public class SurfaceConnectCommand implements TabExecutor {
         }
         if (args.length == 1) {
             return TabUtil.getBlockPatternSuggestions(args[0], true);
+        }
+        if (args.length == 2) {
+            return Arrays.asList("open", "closed");
         }
         return emptyList();
     }

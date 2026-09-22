@@ -1,6 +1,8 @@
 package de.btegermany.utilities.commands;
 
 import static java.util.Collections.emptyList;
+
+import java.util.Arrays;
 import java.util.List;
 
 import com.fastasyncworldedit.core.function.mask.InverseMask;
@@ -43,9 +45,9 @@ public class ConnectCommand implements TabExecutor {
             player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //connect");
             return true;
         }
-        if (args.length != 1) {
+        if (args.length < 1 || args.length > 2) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cWrong usage");
-            player.sendMessage(BTEGUtilities.PREFIX + "/connect <Block-ID>");
+            player.sendMessage(BTEGUtilities.PREFIX + "/connect <Block-ID> [open|closed]");
             return true;
         }
 
@@ -58,9 +60,11 @@ public class ConnectCommand implements TabExecutor {
             }
         }
 
+        var open = args.length == 2 && args[1].equalsIgnoreCase("open");
+
         try {
             WorldEditUtil.findSelection(player, session -> {
-                this.createLine(session, args[0], args[0].equalsIgnoreCase("plot"));
+                this.createLine(session, args[0], args[0].equalsIgnoreCase("plot"), open);
             });
         } catch (MaxChangedBlocksException | EmptyClipboardException e) {
             BTEGUtilities.getPlugin().getComponentLogger().warn("Connect Failed because of empty Clipboard or too much blocks.", e);
@@ -69,7 +73,7 @@ public class ConnectCommand implements TabExecutor {
         return true;
     }
 
-    private void createLine(SelectionEditSession session, String pattern, boolean plot) throws MaxChangedBlocksException, EmptyClipboardException {
+    private void createLine(SelectionEditSession session, String pattern, boolean plot, boolean open) throws MaxChangedBlocksException, EmptyClipboardException {
         Player player = session.player();
 
         // Check if WorldEdit selection is polygonal
@@ -106,11 +110,13 @@ public class ConnectCommand implements TabExecutor {
                 editSession.replaceBlocks(session.region(), nonLapisMask, clayPattern);
             }
 
-            for (int i = 0; points.size() > i; i++) {
+            int maxCount = open ? points.size() - 1 : points.size();
+
+            for (int i = 0; maxCount > i; i++) {
                 BlockVector3 vector = BlockVector3.at(points.get(i).x(), y, points.get(i).z());
                 BlockVector3 vector1;
                 if (i == points.size() - 1) {
-                    vector1 = BlockVector3.at(points.get(i + 1 - points.size()).x(), y, points.get(i + 1 - points.size()).z());
+                    vector1 = BlockVector3.at(points.getFirst().x(), y, points.getFirst().z());
                 } else {
                     vector1 = BlockVector3.at(points.get(i + 1).x(), y, points.get(i + 1).z());
                 }
@@ -135,6 +141,11 @@ public class ConnectCommand implements TabExecutor {
         // First argument: target
         if (args.length == 1) {
             return TabUtil.getBlockPatternSuggestions(args[0], true);
+        }
+
+        // Second argument: whether the lines should be a closed loop
+        if (args.length == 2) {
+            return Arrays.asList("open", "closed");
         }
 
         return emptyList();
