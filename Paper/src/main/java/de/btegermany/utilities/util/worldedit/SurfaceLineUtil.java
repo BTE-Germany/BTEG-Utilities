@@ -35,6 +35,10 @@ public final class SurfaceLineUtil {
      * consecutive calls sharing the same set don't place overlapping blocks twice.
      */
     public static Result drawSurfaceLine(SelectionEditSession session, BlockVector3 pos1, BlockVector3 pos2, BlockState blockState, Set<Long> visitedColumns) {
+        return drawSurfaceLine(session, pos1, pos2, blockState, visitedColumns, false);
+    }
+
+    public static Result drawSurfaceLine(SelectionEditSession session, BlockVector3 pos1, BlockVector3 pos2, BlockState blockState, Set<Long> visitedColumns, boolean isTop) {
         int steps = Math.max(Math.abs(pos2.x() - pos1.x()), Math.abs(pos2.z() - pos1.z()));
         if (steps == 0) {
             return new Result(0, 0);
@@ -56,7 +60,7 @@ public final class SurfaceLineUtil {
                 continue;
             }
 
-            if (placeOnSurface(session, x, y, z, blockState, worldMinY, worldMaxY)) {
+            if (placeOnSurface(session, x, y, z, blockState, worldMinY, worldMaxY, isTop)) {
                 placedBlocks++;
             } else {
                 failedBlocks++;
@@ -77,16 +81,16 @@ public final class SurfaceLineUtil {
      *
      * @return whether a suitable surface position was found and the block was placed
      */
-    private static boolean placeOnSurface(SelectionEditSession session, int x, int y, int z, BlockState blockState, int worldMinY, int worldMaxY) {
-        if (trySetSurfaceBlock(session, x, y, z, blockState, worldMinY, worldMaxY)) {
+    private static boolean placeOnSurface(SelectionEditSession session, int x, int y, int z, BlockState blockState, int worldMinY, int worldMaxY, boolean isTop) {
+        if (trySetSurfaceBlock(session, x, y, z, blockState, worldMinY, worldMaxY, isTop)) {
             return true;
         }
 
         for (int offset = 1; offset <= MAX_SEARCH_OFFSET; offset++) {
-            if (trySetSurfaceBlock(session, x, y + offset, z, blockState, worldMinY, worldMaxY)) {
+            if (trySetSurfaceBlock(session, x, y + offset, z, blockState, worldMinY, worldMaxY, isTop)) {
                 return true;
             }
-            if (trySetSurfaceBlock(session, x, y - offset, z, blockState, worldMinY, worldMaxY)) {
+            if (trySetSurfaceBlock(session, x, y - offset, z, blockState, worldMinY, worldMaxY, isTop)) {
                 return true;
             }
         }
@@ -94,15 +98,17 @@ public final class SurfaceLineUtil {
         return false;
     }
 
-    private static boolean trySetSurfaceBlock(SelectionEditSession session, int x, int y, int z, BlockState blockState, int worldMinY, int worldMaxY) {
-        if (y < worldMinY || y >= worldMaxY) {
+    private static boolean trySetSurfaceBlock(SelectionEditSession session, int x, int y, int z, BlockState blockState, int worldMinY, int worldMaxY, boolean isTop) {
+        int targetY = isTop ? y + 1 : y;
+        if (y < worldMinY || y >= worldMaxY || targetY < worldMinY || targetY >= worldMaxY) {
             return false;
         }
 
-        BlockVector3 blockPos = BlockVector3.at(x, y, z);
+        BlockVector3 surfacePos = BlockVector3.at(x, y, z);
+        BlockVector3 blockPos = BlockVector3.at(x, targetY, z);
         BlockVector3 abovePos = BlockVector3.at(x, y + 1, z);
 
-        BlockType current = session.editSession().getBlock(blockPos).getBlockType();
+        BlockType current = session.editSession().getBlock(surfacePos).getBlockType();
         BlockType above = session.editSession().getBlock(abovePos).getBlockType();
 
         if (current.equals(BlockTypes.AIR) || !above.equals(BlockTypes.AIR)) {

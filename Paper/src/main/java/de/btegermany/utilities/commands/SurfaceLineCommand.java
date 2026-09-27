@@ -19,10 +19,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Draws a line between the two selection points, just like WorldEdit's //line, but instead of a
@@ -40,8 +37,8 @@ public class SurfaceLineCommand implements TabExecutor {
             player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //surfaceline");
             return true;
         }
-        if (args.length != 1) {
-            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //surfaceline <Block-ID>");
+        if (args.length < 1 || args.length > 2) {
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //surfaceline <Block-ID> [ground|top]");
             return true;
         }
 
@@ -53,8 +50,10 @@ public class SurfaceLineCommand implements TabExecutor {
             return true;
         }
 
+        var isTop = args.length == 2 && args[1].equalsIgnoreCase("top");
+
         try {
-            WorldEditUtil.findSelection(player, session -> this.drawSurfaceLine(session, blockState));
+            WorldEditUtil.findSelection(player, session -> this.drawSurfaceLine(session, blockState, isTop));
         } catch (MaxChangedBlocksException | EmptyClipboardException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred while drawing the line.");
             exception.printStackTrace();
@@ -63,7 +62,7 @@ public class SurfaceLineCommand implements TabExecutor {
         return true;
     }
 
-    private void drawSurfaceLine(SelectionEditSession session, BlockState blockState) {
+    private void drawSurfaceLine(SelectionEditSession session, BlockState blockState, boolean isTop) {
         Player player = session.player();
 
         if (!(session.region() instanceof CuboidRegion cuboidRegion)) {
@@ -82,7 +81,7 @@ public class SurfaceLineCommand implements TabExecutor {
         // Every step corresponds to one column (x/z pair) along the imaginary straight line.
         // Since multiple steps can round to the same column, we only need to process each once.
         Set<Long> visitedColumns = new HashSet<>();
-        SurfaceLineUtil.Result result = SurfaceLineUtil.drawSurfaceLine(session, pos1, pos2, blockState, visitedColumns);
+        SurfaceLineUtil.Result result = SurfaceLineUtil.drawSurfaceLine(session, pos1, pos2, blockState, visitedColumns, isTop);
 
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         player.sendMessage(BTEGUtilities.PREFIX + "Placed §6§l" + result.placedBlocks() + " §r§7surface line block(s)!");
@@ -93,9 +92,15 @@ public class SurfaceLineCommand implements TabExecutor {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!sender.hasPermission("bteg.builder") || args.length != 1) {
+        if (!sender.hasPermission("bteg.builder")) {
             return Collections.emptyList();
         }
-        return TabUtil.getBlockPatternSuggestions(args[0], true);
+        if (args.length == 1) {
+            return TabUtil.getBlockPatternSuggestions(args[0], true);
+        }
+        if (args.length == 2) {
+            return Arrays.asList("top", "ground");
+        }
+        return Collections.emptyList();
     }
 }
