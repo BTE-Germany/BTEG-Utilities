@@ -74,3 +74,8 @@ commands:
     usage: //curb <marker> <asphalt block> <stairs>
     aliases:
       - /curb
+  arch:
+    description: Draws a catenary arch between the opposite corners of a cuboid selection
+    usage: //arch <block> <height> <up|down>
+    aliases:
+      - /arch
