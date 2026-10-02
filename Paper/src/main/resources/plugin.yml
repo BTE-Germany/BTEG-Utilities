@@ -69,3 +69,8 @@ commands:
     usage: //skew <Amount> <Direction[n,e,s,w]> <Side[n,e,s,w]>
     aliases:
       - /skew
+  curb:
+    description: Replaces curb marker blocks with stairs facing the asphalt
+    usage: //curb <marker> <asphalt block> <stairs>
+    aliases:
+      - /curb
