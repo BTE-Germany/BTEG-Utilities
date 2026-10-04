@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.Sound;
+import de.btegermany.utilities.util.CommandSound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -106,7 +106,7 @@ public class SurfaceConnectCommand implements TabExecutor {
             failedBlocks += result.failedBlocks();
         }
 
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+        CommandSound.playSuccess(player);
         player.sendMessage(BTEGUtilities.PREFIX + "Placed §6§l" + placedBlocks + " §r§7surface connection block(s)!");
         if (failedBlocks > 0) {
             player.sendMessage(BTEGUtilities.PREFIX + "§eWarning: " + failedBlocks + " block(s) could not be placed (no nearby surface found).");

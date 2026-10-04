@@ -9,7 +9,7 @@ import com.fastasyncworldedit.core.function.mask.InverseMask;
 import com.sk89q.worldedit.function.mask.BlockTypeMask;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.pattern.Pattern;
-import org.bukkit.Sound;
+import de.btegermany.utilities.util.CommandSound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -130,7 +130,7 @@ public class ConnectCommand implements TabExecutor {
             player.sendMessage(BTEGUtilities.PREFIX + "Blocks successfully connected!");
         }
 
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+        CommandSound.playSuccess(player);
     }
 
     @Override

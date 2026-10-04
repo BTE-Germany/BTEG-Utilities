@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.bukkit.Sound;
+import de.btegermany.utilities.util.CommandSound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -107,7 +107,7 @@ public class SideCommand implements TabExecutor {
             WorldEditUtil.findSelection(player, session -> {
                 SideCommand.replaceSide(session, replaceSideArgs);
 
-                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                CommandSound.playSuccess(player);
             });
         } catch (MaxChangedBlocksException | EmptyClipboardException e) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred.");
