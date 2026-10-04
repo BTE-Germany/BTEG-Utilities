@@ -40,7 +40,6 @@ public final class BTEGUtilities extends JavaPlugin {
         Objects.requireNonNull(getCommand("skew")).setExecutor(new SkewCommand());
         Objects.requireNonNull(getCommand("curb")).setExecutor(new CurbCommand());
         Objects.requireNonNull(getCommand("arch")).setExecutor(new ArchCommand());
-        Objects.requireNonNull(getCommand("buildsound")).setExecutor(new BuildSoundCommand());
 
         this.getServer().getMessenger().registerIncomingPluginChannel(this, PLUGIN_CHANNEL, new PluginMessageListener(this, this.dndPlayersRegistry));
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");

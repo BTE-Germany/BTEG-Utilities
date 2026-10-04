@@ -10,7 +10,7 @@ import de.btegermany.utilities.util.TabUtil;
 import de.btegermany.utilities.util.worldedit.Converter;
 import de.btegermany.utilities.util.worldedit.SelectionEditSession;
 import de.btegermany.utilities.util.worldedit.WorldEditUtil;
-import de.btegermany.utilities.util.CommandSound;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -110,7 +110,7 @@ public class ArchCommand implements TabExecutor {
             changed += placeBlock(session, block, x, y, z);
             previousY = y;
         }
-        CommandSound.playSuccess(player);
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         player.sendMessage(BTEGUtilities.PREFIX + "Placed §6§l" + changed + " §r§7arch block(s).");
     }
 

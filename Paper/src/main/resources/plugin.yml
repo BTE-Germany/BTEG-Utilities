@@ -79,6 +79,3 @@ commands:
     usage: //arch <block> <height> <up|down>
     aliases:
       - /arch
-  buildsound:
-    description: Toggles the sound played after custom commands
-    usage: /buildsound

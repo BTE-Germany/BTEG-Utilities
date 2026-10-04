@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import de.btegermany.utilities.util.CommandSound;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -184,7 +184,7 @@ public class SkewCommand implements TabExecutor {
             movedBlocks++;
         }
 
-        CommandSound.playSuccess(player);
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         player.sendMessage(BTEGUtilities.PREFIX + "Skewed §6§l" + movedBlocks + " §r§7block(s)!");
     }
 

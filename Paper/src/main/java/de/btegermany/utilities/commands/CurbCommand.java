@@ -12,7 +12,7 @@ import de.btegermany.utilities.util.TabUtil;
 import de.btegermany.utilities.util.worldedit.Converter;
 import de.btegermany.utilities.util.worldedit.SelectionEditSession;
 import de.btegermany.utilities.util.worldedit.WorldEditUtil;
-import de.btegermany.utilities.util.CommandSound;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -209,7 +209,7 @@ public class CurbCommand implements TabExecutor {
             changed++;
         }
 
-        CommandSound.playSuccess(player);
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         player.sendMessage(BTEGUtilities.PREFIX + "Replaced §6§l" + changed + " §r§7curb marker block(s).");
     }
 

@@ -7,7 +7,7 @@ import static java.util.Collections.emptyList;
 import java.util.List;
 import java.util.Locale;
 
-import de.btegermany.utilities.util.CommandSound;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -91,7 +91,7 @@ public class RailCommand implements TabExecutor {
 
             this.createRails(session, playerDirection, anvils, middleBlockType, railwaySleepersMaterial, inGround);
 
-            CommandSound.playSuccess(player);
+            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         });
 
         return true;
