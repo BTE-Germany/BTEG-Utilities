@@ -83,7 +83,6 @@ public class SurfaceLineCommand implements TabExecutor {
         Set<Long> visitedColumns = new HashSet<>();
         SurfaceLineUtil.Result result = SurfaceLineUtil.drawSurfaceLine(session, pos1, pos2, blockState, visitedColumns, isTop);
 
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         player.sendMessage(BTEGUtilities.PREFIX + "Placed §6§l" + result.placedBlocks() + " §r§7surface line block(s)!");
         if (result.failedBlocks() > 0) {
             player.sendMessage(BTEGUtilities.PREFIX + "§eWarning: " + result.failedBlocks() + " block(s) could not be placed (no nearby surface found).");
