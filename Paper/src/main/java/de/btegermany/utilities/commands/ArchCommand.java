@@ -92,7 +92,7 @@ public class ArchCommand implements TabExecutor {
         int steps = Math.max(Math.abs(end.x() - start.x()), Math.abs(end.z() - start.z()));
         steps = Math.max(steps, 1);
         int changed = 0;
-        Integer previousY = null;
+        BlockVector3[] curvePoints = new BlockVector3[steps + 1];
         for (int i = 0; i <= steps; i++) {
             double t = (double) i / steps;
             double distance = t * horizontalLength;
@@ -101,14 +101,19 @@ public class ArchCommand implements TabExecutor {
             int x = (int) Math.round(start.x() + (end.x() - start.x()) * t);
             int y = (int) Math.round(targetY);
             int z = (int) Math.round(start.z() + (end.z() - start.z()) * t);
-            if (previousY != null && Math.abs(y - previousY) > 1) {
-                int direction = Integer.signum(y - previousY);
-                for (int fillY = previousY + direction; fillY != y; fillY += direction) {
-                    changed += placeBlock(session, block, x, fillY, z);
-                }
-            }
+            curvePoints[i] = BlockVector3.at(x, y, z);
             changed += placeBlock(session, block, x, y, z);
-            previousY = y;
+        }
+
+        // Fill steep sections symmetrically: process the first and last segment, then move inward.
+        for (int offset = 0; offset < (steps + 1) / 2; offset++) {
+            int left = offset + 1;
+            int right = steps - offset;
+            changed += fillVerticalGap(session, block, curvePoints[left - 1], curvePoints[left]);
+            if (right != left) {
+                // Mirror the left-side rule: place this segment's fill at its left endpoint.
+                changed += fillVerticalGap(session, block, curvePoints[right], curvePoints[right - 1]);
+            }
         }
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
         player.sendMessage(BTEGUtilities.PREFIX + "Placed §6§l" + changed + " §r§7arch block(s).");
@@ -120,6 +125,17 @@ public class ArchCommand implements TabExecutor {
         session.editSession().setBlock(x, y, z, block);
         session.changedBlocks().put(position, block);
         return 1;
+    }
+
+    private int fillVerticalGap(SelectionEditSession session, BlockState block,
+                                BlockVector3 from, BlockVector3 to) {
+        if (Math.abs(to.y() - from.y()) <= 1) return 0;
+        int direction = Integer.signum(to.y() - from.y());
+        int changed = 0;
+        for (int y = from.y() + direction; y != to.y(); y += direction) {
+            changed += placeBlock(session, block, to.x(), y, to.z());
+        }
+        return changed;
     }
 
     /** Fits a cosh catenary whose minimum is the requested distance below both endpoints. */
