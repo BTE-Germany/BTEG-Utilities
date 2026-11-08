@@ -261,6 +261,7 @@ public final class TreePackCommand implements TabExecutor {
             patterns.addAll(c.getStringList("trunk-colours." + category + ".blocks"));
             patterns.addAll(c.getStringList("trunk-colours." + category + ".walls"));
             patterns.addAll(c.getStringList("trunk-colours." + category + ".fences"));
+            patterns.addAll(c.getStringList("trunk-colours." + category + ".other"));
         }
         return patterns;
     }
@@ -295,6 +296,7 @@ public final class TreePackCommand implements TabExecutor {
         if (blockId(state).equals("pointed_dripstone") && matchesAny(state, trunkPatterns(c, "walls"))) return 2;
         if (matchesAny(state, trunkPatterns(c, "walls"))) return 3; // wall
         if (matchesAny(state, trunkPatterns(c, "fences"))) return 1; // fence
+        if (matchesAny(state, trunkPatterns(c, "other"))) return 0;
         return 0; // other configured trunk material
     }
 
@@ -343,6 +345,7 @@ public final class TreePackCommand implements TabExecutor {
             patterns.addAll(c.getStringList(section + "." + k + ".others"));
             patterns.addAll(c.getStringList(section + "." + k + ".walls"));
             patterns.addAll(c.getStringList(section + "." + k + ".fences"));
+            patterns.addAll(c.getStringList(section + "." + k + ".other"));
             double score = input.stream().filter(x -> matchesAny(x, patterns)).count() * c.getDouble(section + "." + k + ".multiplier", 1);
             if (score > max) {
                 max = score;
@@ -357,6 +360,7 @@ public final class TreePackCommand implements TabExecutor {
         if (matchesTrunkGroup(blocks, c, "walls", true)) return "wall";
         if (blocks.stream().anyMatch(b -> blockId(b).equals("pointed_dripstone"))) return "pointed_dripstone";
         if (matchesTrunkGroup(blocks, c, "fences")) return "fence";
+        if (matchesTrunkGroup(blocks, c, "other")) return "other";
         return "other";
     }
 
@@ -460,7 +464,7 @@ public final class TreePackCommand implements TabExecutor {
         YamlConfiguration c = config();
         Set<String> patterns = new LinkedHashSet<>();
         addCategoryPatterns(c, patterns, "colours", "blocks", "others");
-        addCategoryPatterns(c, patterns, "trunk-colours", "blocks", "walls", "fences");
+        addCategoryPatterns(c, patterns, "trunk-colours", "blocks", "walls", "fences", "other");
         List<String> invalid = patterns.stream().filter(pattern -> !isValidBlockPattern(pattern)).sorted().toList();
         if (!invalid.isEmpty()) {
             plugin.getLogger().warning("Invalid Minecraft block IDs or blockstates in treepack.yml:\n - " + String.join("\n - ", invalid));

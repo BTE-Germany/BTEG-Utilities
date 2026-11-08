@@ -1,10 +1,10 @@
 # Relative to plugins/bteg_utilities; resolves to plugins/FastAsyncWorldEdit/schematics.
-output-root: ../FastAsyncWorldEdit/schematics
+output-root: ..\FastAsyncWorldEdit\schematics
 
 # <name> expands to name/value. [<name>] expands to value alone.
 paths:
-  - trees/<type>/<height>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem
-  - trees/<type>/<height_type>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem
+  - trees/[<type>]/<height>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem
+  - trees/[<type>]/<height_type>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem
   - trees_input/tree.schem
 
 manual:
@@ -31,6 +31,7 @@ colours:
     others:
       - birch_sapling
       - "cave_vines[berries=false]"
+      - "cave_vines_plant[berries=false]"
       - small_dripleaf
       - big_dripleaf
       - azalea
@@ -63,6 +64,7 @@ colours:
     others:
       - birch_sapling
       - "cave_vines[berries=false]"
+      - "cave_vines_plant[berries=false]"
       - small_dripleaf
       - big_dripleaf
       - azalea
@@ -108,10 +110,11 @@ colours:
       - acacia_sapling
       - "sunflower[half=lower]"
       - "cave_vines[berries=false]"
+      - "cave_vines_plant[berries=false]"
   red:
     multiplier: 1.5
-    blocks: [crimson_hyphae]
-    others: [weeping_vines, crimson_roots, nether_wart, "sweet_berry_bush[age=2,3]", rose_bush, tube_coral, brain_coral, horn_coral, fire_coral, mangrove_fence]
+    blocks: [crimson_hyphae, crimson_stem]
+    others: [weeping_vines, crimson_roots, nether_wart, "sweet_berry_bush[age=2,3]", rose_bush, tube_coral, brain_coral, horn_coral, fire_coral, mangrove_fence, red_shrub]
   pink:
     multiplier: 1.5
     blocks: [cherry_leaves]
@@ -134,6 +137,7 @@ colours:
     others:
       - resin_clump
       - "cave_vines[berries=true]"
+      - "cave_vines_plant[berries=true]"
       - "sweet_berry_bush[age=2,3]"
   brown:
     multiplier: 1.5
@@ -150,64 +154,76 @@ colours:
 trunk-colours:
   brown:
     multiplier: 1.0
-    blocks: [mud, dripstone_block, oak_wood]
+    blocks: [mud, dripstone_block, oak_wood, oak_log]
     walls: [mud_brick_wall, pointed_dripstone]
     fences: [spruce_fence, oak_fence]
+    other: [brown_stained_glass_pane]
   dark_brown:
     multiplier: 1.0
-    blocks: [spruce_wood, stripped_spruce_wood, dark_oak_log, dark_oak_wood, stripped_dark_oak_log, stripped_dark_oak_wood]
+    blocks: [spruce_wood, spruce_log, stripped_spruce_wood, stripped_spruce_log, dark_oak_log, dark_oak_wood, stripped_dark_oak_log, stripped_dark_oak_wood]
     walls: []
     fences: [dark_oak_fence, spruce_fence]
+    other: []
   red:
     multiplier: 1.0
     blocks: [granite]
     walls: [granite_wall, brick_wall]
     fences: [jungle_fence, mangrove_fence]
+    other: [red_stained_glass_pane]
   white:
     multiplier: 1.0
     blocks: [diorite]
     walls: [diorite_wall]
     fences: [pale_oak_fence, birch_fence]
+    other: [white_stained_glass_pane]
   light_gray:
     multiplier: 1.0
     blocks: [andesite]
     walls: [andesite_wall]
     fences: []
+    other: [light_gray_stained_glass_pane, iron_bars]
   gray:
     multiplier: 1.0
     blocks: [stone, cobblestone]
     walls: [cobblestone_wall, stone_brick_wall]
     fences: []
+    other: [gray_stained_glass_pane]
   dark_gray:
     multiplier: 1.0
-    blocks: [tuff, acacia_wood, pale_oak_wood]
+    blocks: [tuff, acacia_wood, acacia_log, pale_oak_wood, pale_oak_log]
     walls: [tuff_wall]
     fences: []
+    other: []
   black:
     multiplier: 1.0
-    blocks: [deepslate, basalt, smooth_basalt, polished_basalt, cherry_wood]
+    blocks: [deepslate, basalt, smooth_basalt, polished_basalt, cherry_wood, cherry_log]
     walls: [cobbled_deepslate_wall, polished_deepslate_wall, deepslate_brick_wall, deepslate_tile_wall, blackstone_wall, nether_brick_wall]
     fences: [nether_brick_fence]
+    other: []
   greenish:
     multiplier: 1.0
-    blocks: [mossy_cobblestone, mossy_stone_bricks, jungle_wood]
+    blocks: [mossy_cobblestone, mossy_stone_bricks, jungle_wood, jungle_log]
     walls: [mossy_cobblestone_wall, mossy_stone_brick_wall]
     fences: []
+    other: []
   orange:
     multiplier: 1.0
-    blocks: [stripped_acacia_wood, red_sandstone]
+    blocks: [stripped_acacia_wood, red_sandstone, stripped_acacia_log]
     walls: [red_sandstone_wall, resin_brick_wall]
     fences: [acacia_fence]
+    other: []
   pink:
     multiplier: 1.0
     blocks: []
     walls: []
     fences: [cherry_fence]
+    other: []
   yellow:
     multiplier: 1.0
     blocks: [end_stone, sandstone]
     walls: [sandstone_wall]
     fences: [bamboo_fence]
+    other: []
 
 # Tree thickness priority is derived from trunk-colours.blocks, .walls, and .fences.
 # pointed_dripstone is checked between full blocks and walls.
