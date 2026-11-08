@@ -79,3 +79,6 @@ commands:
     usage: //arch <block> <height> <up|down>
     aliases:
       - /arch
+  addnorm:
+    description: Saves a categorized tree schematic to the treepack
+    usage: /addnorm tree <type> <trunk> <shape> | /addnorm confirm
