@@ -1,0 +1,213 @@
+# Relative to plugins/bteg_utilities; resolves to plugins/FastAsyncWorldEdit/schematics.
+output-root: ../FastAsyncWorldEdit/schematics
+
+# <name> expands to name/value. [<name>] expands to value alone.
+paths:
+  - trees/<type>/<height>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem
+  - trees/<type>/<height_type>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem
+  - trees_input/tree.schem
+
+manual:
+  trunks: [straight, bent, branch, twin, one-sided, crooked]
+  shapes: [round, wide, thin, ovoid, top_heavy, fluffy, oval]
+  densities: [dense, moderate, sparse, airy]
+
+# Height ranges are inclusive, measured in blocks. Adjust values/names to your taxonomy.
+height-types:
+  XS: {min: 0, max: 5}
+  S: {min: 6, max: 10}
+  M: {min: 11, max: 15}
+  L: {min: 16, max: 20}
+  XL: {min: 21, max: 30}
+  XXL: {min: 31, max: 999}
+trunk-heights:
+  park: {min: 0, max: 4}
+  street: {min: 5, max: 999}
+
+colours:
+  light_green:
+    multiplier: 1.0
+    blocks: [azalea_leaves, jungle_leaves]
+    others:
+      - birch_sapling
+      - "cave_vines[berries=false]"
+      - small_dripleaf
+      - big_dripleaf
+      - azalea
+      - "bamboo[leaves=small,large]"
+  medium_green:
+    multiplier: 1.0
+    blocks: [oak_leaves, dark_oak_leaves, acacia_leaves]
+    others: [oak_sapling, dark_oak_sapling, bush, fern, large_fern, short_grass, tall_grass]
+  medium_dark_green:
+    multiplier: 1.0
+    blocks: [acacia_leaves, mangrove_leaves]
+    others: [jungle_sapling, mangrove_propagule, bush, fern, large_fern, short_grass, tall_grass]
+  dark_green:
+    multiplier: 1.0
+    blocks: [birch_leaves, spruce_leaves]
+    others:
+      - spruce_sapling
+      - "sweet_berry_bush[age=0,1]"
+      - "torchflower_crop[age=0]"
+      - bush
+      - fern
+      - large_fern
+      - short_grass
+      - tall_grass
+  mixed_green:
+    # Its reduced multiplier lets it win when multiple specific green groups score similarly,
+    # while a clear winner in one specific group remains ahead.
+    multiplier: 0.6
+    blocks: [azalea_leaves, jungle_leaves, oak_leaves, dark_oak_leaves, acacia_leaves, mangrove_leaves, birch_leaves, spruce_leaves]
+    others:
+      - birch_sapling
+      - "cave_vines[berries=false]"
+      - small_dripleaf
+      - big_dripleaf
+      - azalea
+      - "bamboo[leaves=small,large]"
+      - oak_sapling
+      - dark_oak_sapling
+      - bush
+      - fern
+      - large_fern
+      - short_grass
+      - tall_grass
+      - jungle_sapling
+      - mangrove_propagule
+      - spruce_sapling
+      - "sweet_berry_bush[age=0,1]"
+      - "torchflower_crop[age=0]"
+      - acacia_sapling
+      - "sunflower[half=lower]"
+  dark_green_gray:
+    # Lower multiplier lets this mixed category win when dark green and gray both contribute.
+    multiplier: 0.6
+    blocks: [birch_leaves, spruce_leaves, pale_oak_leaves]
+    others:
+      - spruce_sapling
+      - "sweet_berry_bush[age=0,1]"
+      - "torchflower_crop[age=0]"
+      - bush
+      - fern
+      - large_fern
+      - short_grass
+      - tall_grass
+      - pale_hanging_moss
+      - pale_oak_sapling
+      - dead_tube_coral
+      - dead_brain_coral
+      - dead_horn_coral
+      - dead_fire_coral
+      - closed_eyeblossom
+  lime_green:
+    multiplier: 1.0
+    blocks: []
+    others:
+      - acacia_sapling
+      - "sunflower[half=lower]"
+      - "cave_vines[berries=false]"
+  red:
+    multiplier: 1.5
+    blocks: [crimson_hyphae]
+    others: [weeping_vines, crimson_roots, nether_wart, "sweet_berry_bush[age=2,3]", rose_bush, tube_coral, brain_coral, horn_coral, fire_coral, mangrove_fence]
+  pink:
+    multiplier: 1.5
+    blocks: [cherry_leaves]
+    others: [cherry_sapling, cactus_flower]
+  purple:
+    multiplier: 1.5
+    blocks: [flowering_azalea_leaves, cherry_wood, blue_terracotta, purple_terracotta]
+    others: [chorus_flower, crimson_fence, crimson_fence_gate, crimson_door, crimson_trapdoor, crimson_button, crimson_pressure_plate, crimson_sign, crimson_wall_sign, crimson_hanging_sign, crimson_wall_hanging_sign, pitcher_plant]
+  grey:
+    multiplier: 1.5
+    blocks: [pale_oak_leaves]
+    others: [pale_hanging_moss, pale_oak_sapling, dead_tube_coral, dead_brain_coral, dead_horn_coral, dead_fire_coral, closed_eyeblossom]
+  white:
+    multiplier: 1.5
+    blocks: []
+    others: [turtle_egg, birch_sapling, azure_bluet]
+  fruit:
+    multiplier: 3.0
+    blocks: []
+    others:
+      - resin_clump
+      - "cave_vines[berries=true]"
+      - "sweet_berry_bush[age=2,3]"
+  brown:
+    multiplier: 1.5
+    blocks: [mangrove_roots]
+    others: [leaf_litter]
+  yellow:
+    multiplier: 1.5
+    blocks: []
+    others:
+      - short_dry_grass
+      - tall_dry_grass
+      - "wheat[age=5,6,7]"
+
+trunk-colours:
+  brown:
+    multiplier: 1.0
+    blocks: [mud, dripstone_block, oak_wood]
+    walls: [mud_brick_wall, pointed_dripstone]
+    fences: [spruce_fence, oak_fence]
+  dark_brown:
+    multiplier: 1.0
+    blocks: [spruce_wood, stripped_spruce_wood, dark_oak_log, dark_oak_wood, stripped_dark_oak_log, stripped_dark_oak_wood]
+    walls: []
+    fences: [dark_oak_fence, spruce_fence]
+  red:
+    multiplier: 1.0
+    blocks: [granite]
+    walls: [granite_wall, brick_wall]
+    fences: [jungle_fence, mangrove_fence]
+  white:
+    multiplier: 1.0
+    blocks: [diorite]
+    walls: [diorite_wall]
+    fences: [pale_oak_fence, birch_fence]
+  light_gray:
+    multiplier: 1.0
+    blocks: [andesite]
+    walls: [andesite_wall]
+    fences: []
+  gray:
+    multiplier: 1.0
+    blocks: [stone, cobblestone]
+    walls: [cobblestone_wall, stone_brick_wall]
+    fences: []
+  dark_gray:
+    multiplier: 1.0
+    blocks: [tuff, acacia_wood, pale_oak_wood]
+    walls: [tuff_wall]
+    fences: []
+  black:
+    multiplier: 1.0
+    blocks: [deepslate, basalt, smooth_basalt, polished_basalt, cherry_wood]
+    walls: [cobbled_deepslate_wall, polished_deepslate_wall, deepslate_brick_wall, deepslate_tile_wall, blackstone_wall, nether_brick_wall]
+    fences: [nether_brick_fence]
+  greenish:
+    multiplier: 1.0
+    blocks: [mossy_cobblestone, mossy_stone_bricks, jungle_wood]
+    walls: [mossy_cobblestone_wall, mossy_stone_brick_wall]
+    fences: []
+  orange:
+    multiplier: 1.0
+    blocks: [stripped_acacia_wood, red_sandstone]
+    walls: [red_sandstone_wall, resin_brick_wall]
+    fences: [acacia_fence]
+  pink:
+    multiplier: 1.0
+    blocks: []
+    walls: []
+    fences: [cherry_fence]
+  yellow:
+    multiplier: 1.0
+    blocks: [end_stone, sandstone]
+    walls: [sandstone_wall]
+    fences: [bamboo_fence]
+
+# Tree thickness priority is derived from trunk-colours.blocks, .walls, and .fences.
+# pointed_dripstone is checked between full blocks and walls.
