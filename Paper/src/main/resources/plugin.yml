@@ -82,6 +82,11 @@ commands:
   addnorm:
     description: Saves a categorized tree schematic to the treepack
     usage: /addnorm tree <type> <trunk> <shape> | /addnorm confirm
+  autoexpand:
+    description: Expands a poly selection through adjacent blocks matching a mask
+    usage: //autoexpand <block[,block...]|auto|plot> [surface|ground]
+    aliases:
+      - /autoexpand
 
 permissions:
   bteg.addnorm:
