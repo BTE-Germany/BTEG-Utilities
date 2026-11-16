@@ -1,6 +1,3 @@
-# Relative to plugins/bteg_utilities; resolves to plugins/FastAsyncWorldEdit/schematics.
-output-root: ..\FastAsyncWorldEdit\schematics
-
 # <name> expands to name/value. [<name>] expands to value alone.
 paths:
   - trees/[<type>]/<height>/<trunk_height>/<trunk>/<shape>/<density>/<colour>/<trunk_colour>/<thickness>/tree.schem

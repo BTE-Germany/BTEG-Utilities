@@ -82,3 +82,8 @@ commands:
   addnorm:
     description: Saves a categorized tree schematic to the treepack
     usage: /addnorm tree <type> <trunk> <shape> | /addnorm confirm
+
+permissions:
+  bteg.addnorm:
+    description: Allows use of the /addnorm command
+    default: op

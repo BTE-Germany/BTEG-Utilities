@@ -64,7 +64,7 @@ public final class TreePackCommand implements TabExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
         if (!(sender instanceof Player player)) return true;
-        if (!player.hasPermission("bteg.builder")) {
+        if (!player.hasPermission("bteg.addnorm")) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission.");
             return true;
         }
@@ -162,7 +162,7 @@ public final class TreePackCommand implements TabExecutor {
             vars.put("type", type);
             vars.put("height", height + "m");
             vars.put("height_type", heightType);
-            vars.put("trunk_height", trunkHeight + "m");
+            vars.put("trunk_height", trunkHeightType);
             vars.put("trunk", trunk);
             vars.put("shape", shape);
             vars.put("density", density);
@@ -171,7 +171,7 @@ public final class TreePackCommand implements TabExecutor {
             vars.put("thickness", thickness);
             List<String> paths = values(c, "paths");
             if (paths.isEmpty()) throw new IllegalArgumentException("No output paths configured.");
-            Path root = plugin.getDataFolder().toPath().resolve(c.getString("output-root", "treepack")).normalize();
+            Path root = schematicDirectory();
             int count = nextCount(root, type + height + "_");
             String name = type + height + "_" + count + ".schem";
             for (String template : paths) {
@@ -229,7 +229,7 @@ public final class TreePackCommand implements TabExecutor {
 
     private Set<String> knownTypes(YamlConfiguration c) {
         Set<String> out = new TreeSet<>();
-        Path root = plugin.getDataFolder().toPath().resolve(c.getString("output-root", "treepack"));
+        Path root = schematicDirectory();
         for (String pattern : values(c, "paths")) {
             int i = pattern.indexOf("<type>");
             if (i < 0) continue;
@@ -242,6 +242,13 @@ public final class TreePackCommand implements TabExecutor {
             }
         }
         return out;
+    }
+
+    private Path schematicDirectory() {
+        WorldEdit worldEdit = WorldEdit.getInstance();
+        return worldEdit.getWorkingDirectoryPath(worldEdit.getConfiguration().saveDir)
+                .toAbsolutePath()
+                .normalize();
     }
 
     private Set<String> leafBlocks(YamlConfiguration c) {
