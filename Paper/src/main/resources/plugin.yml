@@ -84,7 +84,7 @@ commands:
     usage: /addnorm tree <type> <trunk> <shape> | /addnorm confirm
   autoexpand:
     description: Expands a poly selection through adjacent blocks matching a mask
-    usage: //autoexpand <block[,block...]|auto|plot> [surface|ground]
+    usage: //autoexpand <block[,block...]|auto|plot>
     aliases:
       - /autoexpand
 

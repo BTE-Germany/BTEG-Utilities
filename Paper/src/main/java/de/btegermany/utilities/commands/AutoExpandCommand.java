@@ -16,15 +16,15 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /** Expands a poly selection through face-connected blocks matching a block mask. */
 public final class AutoExpandCommand implements TabExecutor {
-    private static final int MAX_RADIUS = 128;
+    private static final int MAX_RADIUS = 256;
     // Four horizontal cardinals at the same level and one level above/below, plus
     // directly vertical neighbors. This allows stepped surfaces without diagonals.
     private static final int[][] DIRECTIONS = {
@@ -41,27 +41,15 @@ public final class AutoExpandCommand implements TabExecutor {
             player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //autoexpand");
             return true;
         }
-        if (args.length < 1 || args.length > 2) {
-            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //autoexpand <block[,block...]|auto|plot> [surface|ground]");
+        if (args.length != 1) {
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //autoexpand <block[,block...] | auto>");
             return true;
         }
 
-        boolean surfaceMode = true;
-        if (args.length == 2) {
-            if (!args[1].equalsIgnoreCase("surface") && !args[1].equalsIgnoreCase("ground")) {
-                player.sendMessage(BTEGUtilities.PREFIX + "§cThe second parameter must be surface or ground.");
-                return true;
-            }
-            surfaceMode = args[1].equalsIgnoreCase("surface");
-        }
         String maskInput = args[0];
         boolean plotMode = maskInput.equalsIgnoreCase("plot");
-        if (plotMode && args.length > 1) {
-            player.sendMessage(BTEGUtilities.PREFIX + "§cThe plot option does not take a second parameter.");
-            return true;
-        }
         if (maskInput.isBlank()) {
-            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //autoexpand <block[,block...]|auto|plot> [surface|ground]");
+            player.sendMessage(BTEGUtilities.PREFIX + "Usage: //autoexpand <block[,block...] | auto>");
             return true;
         }
 
@@ -78,8 +66,11 @@ public final class AutoExpandCommand implements TabExecutor {
             return true;
         }
 
+        org.bukkit.World bukkitWorld = BukkitAdapter.adapt(selection.getWorld());
+        Map<BlockVector3, Boolean> fullCubeCache = new HashMap<>();
         Set<BlockType> mask = new HashSet<>();
-        boolean autoMask = maskInput.equalsIgnoreCase("auto") || plotMode;
+        boolean automaticMask = maskInput.equalsIgnoreCase("auto");
+        boolean autoMask = automaticMask || plotMode;
         if (autoMask) {
             for (int x = selection.getMinimumPoint().x(); x <= selection.getMaximumPoint().x(); x++)
                 for (int y = selection.getMinimumPoint().y(); y <= selection.getMaximumPoint().y(); y++)
@@ -87,7 +78,13 @@ public final class AutoExpandCommand implements TabExecutor {
                         BlockVector3 p = BlockVector3.at(x, y, z);
                         if (!selection.contains(p)) continue;
                         BlockType type = selection.getWorld().getBlock(p).getBlockType();
-                        if (!type.getMaterial().isAir()) mask.add(type);
+                        if (type.getMaterial().isAir()) continue;
+                        if (automaticMask) {
+                            boolean blockIsNonFull = !isFullCube(bukkitWorld, p, fullCubeCache);
+                            boolean aboveIsNonFull = !isFullCube(bukkitWorld, p.add(0, 1, 0), fullCubeCache);
+                            if (!blockIsNonFull && !aboveIsNonFull) continue;
+                        }
+                        mask.add(type);
                     }
             if (plotMode) {
                 mask.add(Objects.requireNonNull(BlockTypes.CLAY));
@@ -97,7 +94,12 @@ public final class AutoExpandCommand implements TabExecutor {
             try {
                 for (String id : maskInput.split(",")) {
                     if (id.isBlank()) throw new IllegalArgumentException("Empty block in mask");
-                    mask.add(Converter.getBlockType(id, player));
+                    BlockType type = Converter.getBlockType(id, player);
+                    if (type.getMaterial().isAir()) {
+                        player.sendMessage(BTEGUtilities.PREFIX + "§cAir blocks cannot be used in the expansion pattern.");
+                        return true;
+                    }
+                    mask.add(type);
                 }
             } catch (RuntimeException exception) {
                 player.sendMessage(BTEGUtilities.PREFIX + "§cInvalid block type in mask.");
@@ -110,6 +112,7 @@ public final class AutoExpandCommand implements TabExecutor {
         }
 
         var world = selection.getWorld();
+        SearchCenter center = selectionCenter(selection);
         ArrayDeque<SearchNode> queue = new ArrayDeque<>();
         Set<BlockVector3> found = new HashSet<>();
         Set<BlockVector3> visited = new HashSet<>();
@@ -119,9 +122,9 @@ public final class AutoExpandCommand implements TabExecutor {
             for (int y = selection.getMinimumPoint().y(); y <= selection.getMaximumPoint().y(); y++)
                 for (int z = selection.getMinimumPoint().z(); z <= selection.getMaximumPoint().z(); z++) {
                     BlockVector3 p = BlockVector3.at(x, y, z);
-                    if (selection.contains(p) && visited.add(p) && matches(world, p, mask, surfaceMode, plotMode)) {
+                    if (selection.contains(p) && visited.add(p) && matches(world, bukkitWorld, p, mask, plotMode, fullCubeCache)) {
                         found.add(p);
-                        queue.add(new SearchNode(p, 0));
+                        queue.add(new SearchNode(p));
                     }
                 }
         // Every block immediately outside the selected volume is a possible flood-fill seed.
@@ -130,22 +133,23 @@ public final class AutoExpandCommand implements TabExecutor {
                 for (int z = selection.getMinimumPoint().z() - 1; z <= selection.getMaximumPoint().z() + 1; z++) {
                     BlockVector3 p = BlockVector3.at(x,y,z);
                     if (selection.contains(p)) continue;
+                    if (!withinRadius(p, center)) continue;
                     boolean adjacent = false;
                     for (int[] d : DIRECTIONS) if (selection.contains(p.add(d[0],d[1],d[2]))) { adjacent = true; break; }
-                    if (adjacent && visited.add(p) && matches(world, p, mask, surfaceMode, plotMode)) {
+                    if (adjacent && visited.add(p) && matches(world, bukkitWorld, p, mask, plotMode, fullCubeCache)) {
                         found.add(p);
-                        queue.add(new SearchNode(p, 1));
+                        queue.add(new SearchNode(p));
                     }
                 }
 
         while (!queue.isEmpty()) {
             SearchNode node = queue.removeFirst();
-            if (node.distance >= MAX_RADIUS) continue;
             for (int[] d : DIRECTIONS) {
                 BlockVector3 next = node.position.add(d[0], d[1], d[2]);
-                if (!visited.add(next) || !matches(world, next, mask, surfaceMode, plotMode)) continue;
+                if (!selection.contains(next) && !withinRadius(next, center)) continue;
+                if (!visited.add(next) || !matches(world, bukkitWorld, next, mask, plotMode, fullCubeCache)) continue;
                 found.add(next);
-                queue.addLast(new SearchNode(next, node.distance + 1));
+                queue.addLast(new SearchNode(next));
             }
         }
         if (found.isEmpty()) {
@@ -177,26 +181,61 @@ public final class AutoExpandCommand implements TabExecutor {
         return true;
     }
 
-    private boolean matches(com.sk89q.worldedit.world.World world, BlockVector3 position, Set<BlockType> mask, boolean surfaceMode, boolean plotMode) {
+    private boolean matches(com.sk89q.worldedit.world.World world, org.bukkit.World bukkitWorld, BlockVector3 position,
+                            Set<BlockType> mask, boolean plotMode, Map<BlockVector3, Boolean> fullCubeCache) {
         BlockState state = world.getBlock(position);
         if (!mask.contains(state.getBlockType())) return false;
-        if (!surfaceMode) return true;
         if (plotMode && isPlotMarker(state.getBlockType())) return true;
 
-        // Treat a vertical run of mask blocks as one surface column. Any block in
-        // the run is valid when the topmost matching block has air directly above.
+        // Full-cube mask behavior: a block is on the surface when the first block
+        // above the matching vertical run does not fill its entire collision cube.
         BlockVector3 above = position.add(0, 1, 0);
-        while (mask.contains(world.getBlock(above).getBlockType())) above = above.add(0, 1, 0);
-        BlockType aboveType = world.getBlock(above).getBlockType();
-        return aboveType.getMaterial().isAir() || (plotMode && isSign(aboveType));
+        while (true) {
+            BlockState aboveState = world.getBlock(above);
+            boolean fullCube = isFullCube(bukkitWorld, above, fullCubeCache);
+            if (!fullCube) return true;
+            if (!mask.contains(aboveState.getBlockType())) return false;
+            above = above.add(0, 1, 0);
+        }
+    }
+
+    /** Tests whether any collision box fills the complete block cube (FAWE-independent #fullcube equivalent). */
+    private boolean isFullCube(org.bukkit.World world, BlockVector3 position, Map<BlockVector3, Boolean> cache) {
+        return cache.computeIfAbsent(position, key -> isFullCube(world, key));
+    }
+
+    private boolean isFullCube(org.bukkit.World world, BlockVector3 position) {
+        var block = world.getBlockAt(position.x(), position.y(), position.z());
+        for (BoundingBox box : block.getCollisionShape().getBoundingBoxes()) {
+            boolean localCube = containsCube(box, 0, 0, 0);
+            boolean worldCube = containsCube(box, position.x(), position.y(), position.z());
+            if (localCube || worldCube) return true;
+        }
+        return false;
+    }
+
+    private boolean containsCube(BoundingBox box, double x, double y, double z) {
+        double epsilon = 1.0e-7;
+        return box.getMinX() <= x + epsilon && box.getMinY() <= y + epsilon && box.getMinZ() <= z + epsilon
+                && box.getMaxX() >= x + 1 - epsilon && box.getMaxY() >= y + 1 - epsilon && box.getMaxZ() >= z + 1 - epsilon;
+    }
+
+    private SearchCenter selectionCenter(Polygonal2DRegion selection) {
+        BlockVector3 min = selection.getMinimumPoint(), max = selection.getMaximumPoint();
+        return new SearchCenter((min.x() + (double) max.x()) / 2.0,
+                (min.y() + (double) max.y()) / 2.0,
+                (min.z() + (double) max.z()) / 2.0);
+    }
+
+    private boolean withinRadius(BlockVector3 position, SearchCenter center) {
+        double dx = position.x() - center.x();
+        double dy = position.y() - center.y();
+        double dz = position.z() - center.z();
+        return dx * dx + dy * dy + dz * dz <= (long) MAX_RADIUS * MAX_RADIUS;
     }
 
     private boolean isPlotMarker(BlockType type) {
         return type == BlockTypes.CLAY || type == BlockTypes.LAPIS_BLOCK;
-    }
-
-    private boolean isSign(BlockType type) {
-        return type.id().substring(type.id().indexOf(':') + 1).endsWith("sign");
     }
 
     /** Traces every directed edge between an occupied column and an empty column. */
@@ -435,21 +474,33 @@ public final class AutoExpandCommand implements TabExecutor {
     }
 
     @Override public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String @NotNull [] args) {
-        if (!sender.hasPermission("bteg.builder") || args.length == 0) return List.of();
+        if (!sender.hasPermission("bteg.builder") || args.length != 1) return List.of();
+
         String current = args[args.length - 1];
-        if (args.length >= 2) {
-            return Stream.of("surface", "ground")
-                    .filter(option -> option.startsWith(current.toLowerCase(Locale.ROOT))).toList();
-        }
         int comma = current.lastIndexOf(',');
         String prefix = comma < 0 ? "" : current.substring(0, comma + 1);
         String partial = comma < 0 ? current : current.substring(comma + 1);
+
         List<String> suggestions = new ArrayList<>();
         if (comma < 0 && "auto".startsWith(partial.toLowerCase(Locale.ROOT))) suggestions.add("auto");
         suggestions.addAll(de.btegermany.utilities.util.TabUtil.getBlockPatternSuggestions(partial, true).stream()
+                .filter(suggestion -> !isAirSuggestion(suggestion, sender))
                 .map(suggestion -> prefix + suggestion).toList());
         return suggestions.stream().distinct().toList();
     }
 
-    private record SearchNode(BlockVector3 position, int distance) {}
+    private boolean isAirSuggestion(String suggestion, CommandSender sender) {
+        int stateStart = suggestion.indexOf('[');
+        String blockId = stateStart < 0 ? suggestion : suggestion.substring(0, stateStart);
+        try {
+            BlockType type = blockId.equalsIgnoreCase("hand") && sender instanceof Player player
+                    ? Converter.getBlockType(blockId, player) : Converter.getBlockType(blockId);
+            return type.getMaterial().isAir();
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private record SearchNode(BlockVector3 position) {}
+    private record SearchCenter(double x, double y, double z) {}
 }
