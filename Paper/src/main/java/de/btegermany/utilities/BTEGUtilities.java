@@ -44,6 +44,7 @@ public final class BTEGUtilities extends JavaPlugin {
         Objects.requireNonNull(getCommand("arch")).setExecutor(new ArchCommand());
         Objects.requireNonNull(getCommand("addnorm")).setExecutor(new TreePackCommand(this));
         Objects.requireNonNull(getCommand("autoexpand")).setExecutor(new AutoExpandCommand());
+        Objects.requireNonNull(getCommand("gradient")).setExecutor(new GradientCommand());
 
         this.getServer().getMessenger().registerIncomingPluginChannel(this, PLUGIN_CHANNEL, new PluginMessageListener(this, this.dndPlayersRegistry));
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");

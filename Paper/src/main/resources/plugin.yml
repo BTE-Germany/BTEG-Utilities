@@ -87,6 +87,11 @@ commands:
     usage: //autoexpand <block[,block...]|auto|plot>
     aliases:
       - /autoexpand
+  gradient:
+    description: Applies a block gradient across or inward through a cuboid selection
+    usage: //gradient [replace-blocks] <block[,block...]> <direction> [clean|grainy]
+    aliases:
+      - /gradient
 
 permissions:
   bteg.addnorm:
