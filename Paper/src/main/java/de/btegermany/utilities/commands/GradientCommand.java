@@ -9,6 +9,7 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.ExecutionGuard;
 import de.btegermany.utilities.util.TabUtil;
 import de.btegermany.utilities.util.worldedit.Converter;
 import de.btegermany.utilities.util.worldedit.SelectionEditSession;
@@ -20,10 +21,14 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
-/** Applies an ordered block gradient across or inward/outward through a cuboid or polygon selection. */
+/**
+ * Applies an ordered block gradient across or inward/outward through a cuboid or polygon selection.
+ */
 public class GradientCommand implements TabExecutor {
     private static final Set<String> DIRECTIONS = Set.of("north", "south", "west", "east", "ne", "nw", "se", "sw", "up", "down", "inwards", "outwards");
 
@@ -75,8 +80,10 @@ public class GradientCommand implements TabExecutor {
         }
 
         Set<BlockType> finalMask = mask;
-        try {
+        try (ExecutionGuard ignored = ExecutionGuard.start(Duration.ofSeconds(5))) {
             WorldEditUtil.findSelection(player, session -> apply(session, blocks, direction, transition, finalMask));
+        } catch (ExecutionGuard.TimeoutException timeout) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cGradient exceeded its 5-second calculation limit; some blocks may already have been changed.");
         } catch (MaxChangedBlocksException | EmptyClipboardException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred while applying the gradient.");
             exception.printStackTrace();
@@ -96,7 +103,9 @@ public class GradientCommand implements TabExecutor {
         return null;
     }
 
-    /** Splits block lists on commas outside WorldEdit's square-bracket block states. */
+    /**
+     * Splits block lists on commas outside WorldEdit's square-bracket block states.
+     */
     private List<String> splitBlockList(String input) {
         List<String> blocks = new ArrayList<>();
         int bracketDepth = 0;
@@ -143,24 +152,24 @@ public class GradientCommand implements TabExecutor {
         List<BlockVector3> positions = new ArrayList<>();
         Map<BlockVector3, Integer> radialDistances = new HashMap<>();
         Map<BlockVector3, Integer> localMaxima = new HashMap<>();
+        collectPositions(region, min, max, positions);
         if (radial) {
-            collectPositions(region, min, max, positions);
             if (region instanceof Polygonal2DRegion polygon) {
                 radialDistances.putAll(polygonBoundaryDistances(polygon, positions, min, max));
             } else {
                 for (BlockVector3 position : positions) {
+                    ExecutionGuard.check();
                     int distance = boundaryDistance(position, min, max);
                     radialDistances.put(position, distance);
                 }
             }
             localMaxima.putAll(findReachableLocalMaxima(positions, radialDistances));
-        } else {
-            collectPositions(region, min, max, positions);
         }
-        int totalLayers = Math.abs(vector[0]) * (max.x()-min.x()) + Math.abs(vector[1]) * (max.y()-min.y()) + Math.abs(vector[2]) * (max.z()-min.z()) + 1;
+        int totalLayers = Math.abs(vector[0]) * (max.x() - min.x()) + Math.abs(vector[1]) * (max.y() - min.y()) + Math.abs(vector[2]) * (max.z() - min.z()) + 1;
         int changed = 0;
         int minProjection = vector[0] * (vector[0] < 0 ? max.x() : min.x()) + vector[1] * (vector[1] < 0 ? max.y() : min.y()) + vector[2] * (vector[2] < 0 ? max.z() : min.z());
         for (BlockVector3 position : positions) {
+            ExecutionGuard.check();
             BlockType currentType = session.editSession().getBlock(position).getBlockType();
             if (mask == null ? currentType.getMaterial().isAir() : !mask.contains(currentType)) continue;
             int layer;
@@ -184,21 +193,28 @@ public class GradientCommand implements TabExecutor {
         player.sendMessage(BTEGUtilities.PREFIX + "Applied gradient to §6§l" + changed + " §r§7block(s).");
     }
 
-    /** Propagates each position's highest reachable distance through strictly increasing neighbors. */
+    /**
+     * Propagates each position's highest reachable distance through strictly increasing neighbors.
+     */
     private Map<BlockVector3, Integer> findReachableLocalMaxima(List<BlockVector3> positions,
-                                                                 Map<BlockVector3, Integer> distances) {
+                                                                Map<BlockVector3, Integer> distances) {
         List<BlockVector3> descending = new ArrayList<>(positions);
         descending.sort(Comparator.comparingInt((BlockVector3 p) -> distances.get(p)).reversed());
         Map<BlockVector3, Integer> maxima = new HashMap<>(positions.size());
-        int[][] neighbors = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
         for (BlockVector3 position : descending) {
+            ExecutionGuard.check();
             int distance = distances.get(position);
             int maximum = distance;
-            for (int[] offset : neighbors) {
-                BlockVector3 neighbor = position.add(offset[0], offset[1], offset[2]);
-                Integer neighborDistance = distances.get(neighbor);
-                if (neighborDistance != null && neighborDistance > distance) {
-                    maximum = Math.max(maximum, maxima.get(neighbor));
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
+                        BlockVector3 neighbor = position.add(dx, dy, dz);
+                        Integer neighborDistance = distances.get(neighbor);
+                        if (neighborDistance != null && neighborDistance > distance) {
+                            maximum = Math.max(maximum, maxima.get(neighbor));
+                        }
+                    }
                 }
             }
             maxima.put(position, maximum);
@@ -222,14 +238,21 @@ public class GradientCommand implements TabExecutor {
         if (upper == null) return anchors.lastEntry().getValue();
         if (lower.getKey().equals(upper.getKey())) return lower.getValue();
         double upperChance = (double) (layer - lower.getKey()) / (upper.getKey() - lower.getKey());
+        // Jitter the ideal split slightly so distance layers that land exactly on
+        // an anchor can still contain a small share of either neighboring block.
+        upperChance = Math.clamp(
+                upperChance + ThreadLocalRandom.current().nextDouble(-0.05, 0.05), 0.0, 1.0);
         return ThreadLocalRandom.current().nextDouble() < upperChance ? upper.getValue() : lower.getValue();
     }
 
-    /** Iterating the enclosing bounds and checking contains is consistent across FAWE region types. */
+    /**
+     * Iterating the enclosing bounds and checking contains is consistent across FAWE region types.
+     */
     private void collectPositions(Region region, BlockVector3 min, BlockVector3 max, List<BlockVector3> positions) {
         for (int x = min.x(); x <= max.x(); x++) {
             for (int y = min.y(); y <= max.y(); y++) {
                 for (int z = min.z(); z <= max.z(); z++) {
+                    ExecutionGuard.check();
                     BlockVector3 position = BlockVector3.at(x, y, z);
                     if (region.contains(position)) positions.add(position);
                 }
@@ -239,29 +262,51 @@ public class GradientCommand implements TabExecutor {
 
     private int boundaryDistance(BlockVector3 position, BlockVector3 min, BlockVector3 max) {
         int distance = Integer.MAX_VALUE;
-        if (max.x() - min.x() > 1) distance = Math.min(distance, Math.min(position.x() - min.x(), max.x() - position.x()));
-        if (max.z() - min.z() > 1) distance = Math.min(distance, Math.min(position.z() - min.z(), max.z() - position.z()));
+        if (max.x() - min.x() > 1)
+            distance = Math.min(distance, Math.min(position.x() - min.x(), max.x() - position.x()));
+        if (max.z() - min.z() > 1)
+            distance = Math.min(distance, Math.min(position.z() - min.z(), max.z() - position.z()));
         return distance == Integer.MAX_VALUE ? 0 : distance;
     }
 
-    /** Seeds the polygon outline, then spreads inward one six-connected block at a time. */
+    /**
+     * Seeds the polygon outline, then spreads inward one six-connected block at a time.
+     */
     private Map<BlockVector3, Integer> polygonBoundaryDistances(Polygonal2DRegion polygon, List<BlockVector3> positions,
                                                                 BlockVector3 min, BlockVector3 max) {
         Set<BlockVector3> selected = new HashSet<>(positions);
         Map<BlockVector3, Integer> distances = new HashMap<>();
         ArrayDeque<BlockVector3> queue = new ArrayDeque<>();
         List<com.sk89q.worldedit.math.BlockVector2> points = polygon.getPoints();
+        Set<PolygonEdge> edges = new HashSet<>();
         for (int i = 0; i < points.size(); i++) {
+            ExecutionGuard.check();
             var a = points.get(i);
             var b = points.get((i + 1) % points.size());
+            edges.add(new PolygonEdge(a.x(), a.z(), b.x(), b.z()));
+        }
+        Set<BlockVector3> outlinePositions = new HashSet<>();
+        for (int i = 0; i < points.size(); i++) {
+            ExecutionGuard.check();
+            var a = points.get(i);
+            var b = points.get((i + 1) % points.size());
+            // Auto-expanded polygons can encode a hole by tracing its connector
+            // out and back along the exact same segment. That segment is not a
+            // real boundary and must not seed gradient distances.
+            if (edges.contains(new PolygonEdge(b.x(), b.z(), a.x(), a.z()))) continue;
             int steps = Math.max(Math.abs(b.x() - a.x()), Math.abs(b.z() - a.z()));
             for (int step = 0; step <= steps; step++) {
+                ExecutionGuard.check();
                 double t = steps == 0 ? 0 : (double) step / steps;
                 int x = (int) Math.round(a.x() + (b.x() - a.x()) * t);
                 int z = (int) Math.round(a.z() + (b.z() - a.z()) * t);
                 for (int y = min.y(); y <= max.y(); y++) {
+                    ExecutionGuard.check();
                     BlockVector3 boundary = BlockVector3.at(x, y, z);
-                    if (selected.contains(boundary) && distances.putIfAbsent(boundary, 0) == null) queue.add(boundary);
+                    if (selected.contains(boundary)) {
+                        outlinePositions.add(boundary);
+                        if (distances.putIfAbsent(boundary, 0) == null) queue.add(boundary);
+                    }
                 }
             }
         }
@@ -270,8 +315,14 @@ public class GradientCommand implements TabExecutor {
         // horizontal neighbor so rasterization rounding cannot leave a gap in the seed line.
         int[][] horizontalNeighbors = {{1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
         for (BlockVector3 position : positions) {
+            ExecutionGuard.check();
             for (int[] offset : horizontalNeighbors) {
-                if (!selected.contains(position.add(offset[0], 0, offset[2]))) {
+                if (!selected.contains(position.add(offset[0], 0, offset[2]))
+                        && (outlinePositions.contains(position)
+                        || outlinePositions.contains(position.add(-1, 0, 0))
+                        || outlinePositions.contains(position.add(1, 0, 0))
+                        || outlinePositions.contains(position.add(0, 0, -1))
+                        || outlinePositions.contains(position.add(0, 0, 1)))) {
                     if (distances.putIfAbsent(position, 0) == null) queue.addLast(position);
                     break;
                 }
@@ -280,9 +331,11 @@ public class GradientCommand implements TabExecutor {
         // Only the vertical outline walls seed this distance field, not the top or bottom faces.
         int[][] neighbors = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
         while (!queue.isEmpty()) {
+            ExecutionGuard.check();
             BlockVector3 current = queue.removeFirst();
             int nextDistance = distances.get(current) + 1;
             for (int[] offset : neighbors) {
+                ExecutionGuard.check();
                 BlockVector3 next = current.add(offset[0], offset[1], offset[2]);
                 if (selected.contains(next) && distances.putIfAbsent(next, nextDistance) == null) queue.addLast(next);
             }
@@ -290,13 +343,21 @@ public class GradientCommand implements TabExecutor {
         return distances;
     }
 
+    private record PolygonEdge(int startX, int startZ, int endX, int endZ) {
+    }
+
     private int[] directionVector(String direction) {
         return switch (direction) {
-            case "north" -> new int[]{0, 0, -1}; case "south" -> new int[]{0, 0, 1};
-            case "west" -> new int[]{-1, 0, 0}; case "east" -> new int[]{1, 0, 0};
-            case "ne" -> new int[]{1, 0, -1}; case "nw" -> new int[]{-1, 0, -1};
-            case "se" -> new int[]{1, 0, 1}; case "sw" -> new int[]{-1, 0, 1};
-            case "up" -> new int[]{0, 1, 0}; case "down" -> new int[]{0, -1, 0};
+            case "north" -> new int[]{0, 0, -1};
+            case "south" -> new int[]{0, 0, 1};
+            case "west" -> new int[]{-1, 0, 0};
+            case "east" -> new int[]{1, 0, 0};
+            case "ne" -> new int[]{1, 0, -1};
+            case "nw" -> new int[]{-1, 0, -1};
+            case "se" -> new int[]{1, 0, 1};
+            case "sw" -> new int[]{-1, 0, 1};
+            case "up" -> new int[]{0, 1, 0};
+            case "down" -> new int[]{0, -1, 0};
             default -> new int[]{0, 0, 0};
         };
     }
@@ -311,11 +372,19 @@ public class GradientCommand implements TabExecutor {
             return suggestions;
         }
         if (args.length == 3) {
-            List<String> suggestions = new ArrayList<>(DIRECTIONS.stream().filter(d -> d.startsWith(args[2].toLowerCase(Locale.ROOT))).toList());
-            suggestions.addAll(List.of("clean", "grainy").stream().filter(mode -> mode.startsWith(args[2].toLowerCase(Locale.ROOT))).toList());
-            return suggestions;
+            // A direction in argument two selects the no-mask syntax, so argument
+            // three is the transition. Otherwise, argument two is another block
+            // list and argument three must be a direction.
+            String secondArgument = args[1].toLowerCase(Locale.ROOT);
+            if (!secondArgument.isBlank() && normalizeDirection(secondArgument) != null) {
+                return Stream.of("clean", "grainy")
+                        .filter(mode -> mode.startsWith(args[2].toLowerCase(Locale.ROOT))).toList();
+            }
+            return DIRECTIONS.stream()
+                    .filter(direction -> direction.startsWith(args[2].toLowerCase(Locale.ROOT))).toList();
         }
-        if (args.length == 4) return List.of("clean", "grainy").stream().filter(mode -> mode.startsWith(args[3].toLowerCase(Locale.ROOT))).toList();
+        if (args.length == 4)
+            return Stream.of("clean", "grainy").filter(mode -> mode.startsWith(args[3].toLowerCase(Locale.ROOT))).toList();
         return Collections.emptyList();
     }
 }

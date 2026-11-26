@@ -11,6 +11,7 @@ import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.ExecutionGuard;
 import de.btegermany.utilities.util.worldedit.Converter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -20,13 +21,14 @@ import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.*;
 
 /** Expands a poly selection through face-connected blocks matching a block mask. */
 public final class AutoExpandCommand implements TabExecutor {
     private static final int MAX_RADIUS = 256;
     private static final int MAX_STARTING_SELECTION_BLOCKS = 50_000;
-    private static final long MAX_EXECUTION_NANOS = 5_000_000_000L;
+    private static final Duration MAX_EXECUTION_TIME = Duration.ofSeconds(5);
     // Four horizontal cardinals at the same level and one level above/below, plus
     // directly vertical neighbors. This allows stepped surfaces without diagonals.
     private static final int[][] DIRECTIONS = {
@@ -38,7 +40,6 @@ public final class AutoExpandCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
-        long deadline = System.nanoTime() + MAX_EXECUTION_NANOS;
         if (!(sender instanceof Player player)) return true;
         if (!player.hasPermission("bteg.builder")) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cNo permission for //autoexpand");
@@ -73,7 +74,7 @@ public final class AutoExpandCommand implements TabExecutor {
             return true;
         }
 
-        try {
+        try (ExecutionGuard ignored = ExecutionGuard.start(MAX_EXECUTION_TIME)) {
         org.bukkit.World bukkitWorld = BukkitAdapter.adapt(selection.getWorld());
         Map<BlockVector3, Boolean> fullCubeCache = new HashMap<>();
         Set<BlockType> mask = new HashSet<>();
@@ -83,7 +84,7 @@ public final class AutoExpandCommand implements TabExecutor {
             for (int x = selection.getMinimumPoint().x(); x <= selection.getMaximumPoint().x(); x++)
                 for (int y = selection.getMinimumPoint().y(); y <= selection.getMaximumPoint().y(); y++)
                     for (int z = selection.getMinimumPoint().z(); z <= selection.getMaximumPoint().z(); z++) {
-                        checkDeadline(deadline);
+                        ExecutionGuard.check();
                         BlockVector3 p = BlockVector3.at(x, y, z);
                         if (!selection.contains(p)) continue;
                         BlockType type = selection.getWorld().getBlock(p).getBlockType();
@@ -130,9 +131,9 @@ public final class AutoExpandCommand implements TabExecutor {
         for (int x = selection.getMinimumPoint().x(); x <= selection.getMaximumPoint().x(); x++)
             for (int y = selection.getMinimumPoint().y(); y <= selection.getMaximumPoint().y(); y++)
                 for (int z = selection.getMinimumPoint().z(); z <= selection.getMaximumPoint().z(); z++) {
-                    checkDeadline(deadline);
+                    ExecutionGuard.check();
                     BlockVector3 p = BlockVector3.at(x, y, z);
-                    if (selection.contains(p) && visited.add(p) && matches(world, bukkitWorld, p, mask, plotMode, fullCubeCache, deadline)) {
+                    if (selection.contains(p) && visited.add(p) && matches(world, bukkitWorld, p, mask, plotMode, fullCubeCache)) {
                         found.add(p);
                         queue.add(new SearchNode(p));
                     }
@@ -141,26 +142,26 @@ public final class AutoExpandCommand implements TabExecutor {
         for (int x = selection.getMinimumPoint().x() - 1; x <= selection.getMaximumPoint().x() + 1; x++)
             for (int y = selection.getMinimumPoint().y() - 1; y <= selection.getMaximumPoint().y() + 1; y++)
                 for (int z = selection.getMinimumPoint().z() - 1; z <= selection.getMaximumPoint().z() + 1; z++) {
-                    checkDeadline(deadline);
+                    ExecutionGuard.check();
                     BlockVector3 p = BlockVector3.at(x,y,z);
                     if (selection.contains(p)) continue;
                     if (!withinRadius(p, center)) continue;
                     boolean adjacent = false;
                     for (int[] d : DIRECTIONS) if (selection.contains(p.add(d[0],d[1],d[2]))) { adjacent = true; break; }
-                    if (adjacent && visited.add(p) && matches(world, bukkitWorld, p, mask, plotMode, fullCubeCache, deadline)) {
+                    if (adjacent && visited.add(p) && matches(world, bukkitWorld, p, mask, plotMode, fullCubeCache)) {
                         found.add(p);
                         queue.add(new SearchNode(p));
                     }
                 }
 
         while (!queue.isEmpty()) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             SearchNode node = queue.removeFirst();
             for (int[] d : DIRECTIONS) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 BlockVector3 next = node.position.add(d[0], d[1], d[2]);
                 if (!selection.contains(next) && !withinRadius(next, center)) continue;
-                if (!visited.add(next) || !matches(world, bukkitWorld, next, mask, plotMode, fullCubeCache, deadline)) continue;
+                if (!visited.add(next) || !matches(world, bukkitWorld, next, mask, plotMode, fullCubeCache)) continue;
                 found.add(next);
                 queue.addLast(new SearchNode(next));
             }
@@ -173,42 +174,39 @@ public final class AutoExpandCommand implements TabExecutor {
         Set<BlockVector2> footprint = new HashSet<>();
         int minY = selection.getMinimumPoint().y(), maxY = selection.getMaximumPoint().y();
         for (BlockVector3 p : found) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             footprint.add(BlockVector2.at(p.x(), p.z()));
             minY = Math.min(minY, p.y());
             maxY = Math.max(maxY, p.y());
         }
-        List<List<BlockVector2>> loops = traceBoundaries(footprint, deadline);
+        List<List<BlockVector2>> loops = traceBoundaries(footprint);
         // Convert cell-corner edges to the block columns immediately inside each edge.
         // Poly selector vertices are block coordinates, not geometric half-block corners;
         // leaving corners at x+1/z+1 makes the selection include an extra row/column.
         List<List<BlockVector2>> convertedLoops = new ArrayList<>();
         for (List<BlockVector2> loop : loops) {
-            checkDeadline(deadline);
-            convertedLoops.add(simplifyCollinear(edgeLoopToBlockCoordinates(loop, deadline), deadline));
+            ExecutionGuard.check();
+            convertedLoops.add(simplifyCollinear(edgeLoopToBlockCoordinates(loop)));
         }
-        List<BlockVector2> outline = joinLoops(convertedLoops, deadline);
+        List<BlockVector2> outline = joinLoops(convertedLoops);
         if (outline.size() < 3) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cThe expanded selection does not form a valid polygon.");
             return true;
         }
+        ExecutionGuard.check();
         localSession.setRegionSelector(world, new Polygonal2DRegionSelector(world, outline, minY, maxY));
         // Setting the server-side selector alone does not notify WorldEditCUI.
         localSession.dispatchCUISelection(BukkitAdapter.adapt(player));
         player.sendMessage(BTEGUtilities.PREFIX + "§aExpanded selection through " + found.size() + " matching block(s).");
         return true;
-        } catch (CalculationTimeoutException timeout) {
+        } catch (ExecutionGuard.TimeoutException timeout) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAutoexpand exceeded its 5-second calculation limit. The selection was not changed.");
             return true;
         }
     }
 
-    private void checkDeadline(long deadline) {
-        if (System.nanoTime() >= deadline) throw new CalculationTimeoutException();
-    }
-
     private boolean matches(com.sk89q.worldedit.world.World world, org.bukkit.World bukkitWorld, BlockVector3 position,
-                            Set<BlockType> mask, boolean plotMode, Map<BlockVector3, Boolean> fullCubeCache, long deadline) {
+                            Set<BlockType> mask, boolean plotMode, Map<BlockVector3, Boolean> fullCubeCache) {
         BlockState state = world.getBlock(position);
         if (!mask.contains(state.getBlockType())) return false;
         if (plotMode && isPlotMarker(state.getBlockType())) return true;
@@ -217,7 +215,7 @@ public final class AutoExpandCommand implements TabExecutor {
         // above the matching vertical run does not fill its entire collision cube.
         BlockVector3 above = position.add(0, 1, 0);
         while (true) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             BlockState aboveState = world.getBlock(above);
             boolean fullCube = isFullCube(bukkitWorld, above, fullCubeCache);
             if (!fullCube) return true;
@@ -266,10 +264,10 @@ public final class AutoExpandCommand implements TabExecutor {
     }
 
     /** Traces every directed edge between an occupied column and an empty column. */
-    private List<List<BlockVector2>> traceBoundaries(Set<BlockVector2> cells, long deadline) {
+    private List<List<BlockVector2>> traceBoundaries(Set<BlockVector2> cells) {
         List<Edge> edges = new ArrayList<>();
         for (BlockVector2 cell : cells) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             int x = cell.x(), z = cell.z();
             if (!cells.contains(BlockVector2.at(x, z - 1))) edges.add(new Edge(x, z, x + 1, z));
             if (!cells.contains(BlockVector2.at(x + 1, z))) edges.add(new Edge(x + 1, z, x + 1, z + 1));
@@ -278,13 +276,13 @@ public final class AutoExpandCommand implements TabExecutor {
         }
         Map<Long, List<Integer>> outgoing = new HashMap<>();
         for (int i = 0; i < edges.size(); i++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             outgoing.computeIfAbsent(key(edges.get(i).sx, edges.get(i).sz), ignored -> new ArrayList<>()).add(i);
         }
         boolean[] used = new boolean[edges.size()];
         List<List<BlockVector2>> loops = new ArrayList<>();
         for (int start = 0; start < edges.size(); start++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             if (used[start]) continue;
             List<BlockVector2> loop = new ArrayList<>();
             int edgeIndex = start;
@@ -292,7 +290,7 @@ public final class AutoExpandCommand implements TabExecutor {
             loop.add(BlockVector2.at(first.sx, first.sz));
             int guard = edges.size() + 1;
             while (guard-- > 0 && !used[edgeIndex]) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 Edge edge = edges.get(edgeIndex);
                 used[edgeIndex] = true;
                 loop.add(BlockVector2.at(edge.ex, edge.ez));
@@ -322,14 +320,14 @@ public final class AutoExpandCommand implements TabExecutor {
     }
 
     /** Emits complete outer rings first, then traverses each hole as a bridge-out-and-back loop. */
-    private List<BlockVector2> joinLoops(List<List<BlockVector2>> loops, long deadline) {
+    private List<BlockVector2> joinLoops(List<List<BlockVector2>> loops) {
         if (loops.isEmpty()) return List.of();
         List<List<BlockVector2>> outerRings = new ArrayList<>();
         List<List<BlockVector2>> holeRings = new ArrayList<>();
         for (List<BlockVector2> loop : loops) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             if (loop.size() < 3) continue;
-            if (signedArea(loop, deadline) >= 0) outerRings.add(loop);
+            if (signedArea(loop) >= 0) outerRings.add(loop);
             else holeRings.add(loop);
         }
         if (outerRings.isEmpty()) {
@@ -337,33 +335,33 @@ public final class AutoExpandCommand implements TabExecutor {
             List<BlockVector2> largest = null;
             double largestArea = -1;
             for (List<BlockVector2> loop : loops) {
-                checkDeadline(deadline);
-                double area = Math.abs(signedArea(loop, deadline));
+                ExecutionGuard.check();
+                double area = Math.abs(signedArea(loop));
                 if (area > largestArea) { largestArea = area; largest = loop; }
             }
             if (largest == null) return List.of();
             outerRings.add(largest);
             holeRings.remove(largest);
         }
-        outerRings.sort(Comparator.comparingDouble((List<BlockVector2> loop) -> Math.abs(signedArea(loop, deadline))).reversed());
+        outerRings.sort(Comparator.comparingDouble((List<BlockVector2> loop) -> Math.abs(signedArea(loop))).reversed());
         List<List<BlockVector2>> secondary = new ArrayList<>(outerRings.subList(1, outerRings.size()));
         secondary.addAll(holeRings);
 
-        BridgePlan bridgePlan = findBridgePlan(outerRings.getFirst(), secondary, deadline);
-        List<BlockVector2> main = insertBoundaryPoint(outerRings.getFirst(), bridgePlan.mainPoint(), deadline);
+        BridgePlan bridgePlan = findBridgePlan(outerRings.getFirst(), secondary);
+        List<BlockVector2> main = insertBoundaryPoint(outerRings.getFirst(), bridgePlan.mainPoint());
         rotateTo(main, bridgePlan.mainPoint());
         BlockVector2 anchor = bridgePlan.mainPoint();
         // Complete the main outer ring before making any bridge to an enclave or hole.
         main.add(anchor);
         for (int loopIndex = 0; loopIndex < secondary.size(); loopIndex++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             List<BlockVector2> loop = secondary.get(loopIndex);
             BlockVector2 loopAnchor = bridgePlan.secondaryPoints().get(loopIndex);
-            loop = insertBoundaryPoint(loop, loopAnchor, deadline);
+            loop = insertBoundaryPoint(loop, loopAnchor);
             rotateTo(loop, loopAnchor);
             main.add(loopAnchor);
             for (int i = 1; i < loop.size(); i++) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 main.add(loop.get(i));
             }
             main.add(loopAnchor); // finish the complete ring
@@ -373,24 +371,24 @@ public final class AutoExpandCommand implements TabExecutor {
     }
 
     /** Picks the shortest bridge endpoints whose segment contains no intermediate block center. */
-    private BridgePlan findBridgePlan(List<BlockVector2> main, List<List<BlockVector2>> secondary, long deadline) {
-        List<BlockVector2> mainCandidates = boundaryLatticePoints(main, deadline);
+    private BridgePlan findBridgePlan(List<BlockVector2> main, List<List<BlockVector2>> secondary) {
+        List<BlockVector2> mainCandidates = boundaryLatticePoints(main);
         List<List<BlockVector2>> candidatesByLoop = new ArrayList<>();
-        for (List<BlockVector2> loop : secondary) candidatesByLoop.add(boundaryLatticePoints(loop, deadline));
+        for (List<BlockVector2> loop : secondary) candidatesByLoop.add(boundaryLatticePoints(loop));
         long bestTotal = Long.MAX_VALUE;
         BlockVector2 bestMain = mainCandidates.getFirst();
         List<BlockVector2> bestSecondary = new ArrayList<>();
         for (BlockVector2 mainPoint : mainCandidates) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             long total = 0;
             List<BlockVector2> destinations = new ArrayList<>();
             boolean viable = true;
             for (List<BlockVector2> candidates : candidatesByLoop) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 BlockVector2 destination = null;
                 long bestDistance = Long.MAX_VALUE;
                 for (BlockVector2 candidate : candidates) {
-                    checkDeadline(deadline);
+                    ExecutionGuard.check();
                     if (!primitiveBridge(mainPoint, candidate)) continue;
                     long distance = squaredDistance(mainPoint, candidate);
                     if (distance < bestDistance) { bestDistance = distance; destination = candidate; }
@@ -414,7 +412,7 @@ public final class AutoExpandCommand implements TabExecutor {
                 BlockVector2 destination = null;
                 long bestDistance = Long.MAX_VALUE;
                 for (BlockVector2 candidate : candidates) {
-                    checkDeadline(deadline);
+                    ExecutionGuard.check();
                     long distance = squaredDistance(fallbackMain, candidate);
                     if (distance < bestDistance) { bestDistance = distance; destination = candidate; }
                 }
@@ -425,35 +423,35 @@ public final class AutoExpandCommand implements TabExecutor {
         return new BridgePlan(bestMain, bestSecondary);
     }
 
-    private List<BlockVector2> boundaryLatticePoints(List<BlockVector2> loop, long deadline) {
+    private List<BlockVector2> boundaryLatticePoints(List<BlockVector2> loop) {
         LinkedHashSet<BlockVector2> points = new LinkedHashSet<>();
         for (int i = 0; i < loop.size(); i++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             BlockVector2 start = loop.get(i), end = loop.get((i + 1) % loop.size());
             int dx = end.x() - start.x(), dz = end.z() - start.z();
             int steps = (int) gcd(Math.abs((long) dx), Math.abs((long) dz));
             if (steps == 0) { points.add(start); continue; }
             int stepX = dx / steps, stepZ = dz / steps;
             for (int step = 0; step < steps; step++) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 points.add(BlockVector2.at(start.x() + step * stepX, start.z() + step * stepZ));
             }
         }
         return new ArrayList<>(points);
     }
 
-    private List<BlockVector2> insertBoundaryPoint(List<BlockVector2> source, BlockVector2 point, long deadline) {
+    private List<BlockVector2> insertBoundaryPoint(List<BlockVector2> source, BlockVector2 point) {
         List<BlockVector2> loop = new ArrayList<>(source);
         if (loop.contains(point)) return loop;
         for (int i = 0; i < loop.size(); i++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             BlockVector2 start = loop.get(i), end = loop.get((i + 1) % loop.size());
             int dx = end.x() - start.x(), dz = end.z() - start.z();
             int steps = (int) gcd(Math.abs((long) dx), Math.abs((long) dz));
             if (steps == 0) continue;
             int stepX = dx / steps, stepZ = dz / steps;
             for (int step = 1; step < steps; step++) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 if (start.x() + step * stepX == point.x() && start.z() + step * stepZ == point.z()) {
                     loop.add(i + 1, point);
                     return loop;
@@ -484,10 +482,10 @@ public final class AutoExpandCommand implements TabExecutor {
         return a;
     }
 
-    private double signedArea(List<BlockVector2> loop, long deadline) {
+    private double signedArea(List<BlockVector2> loop) {
         long area = 0;
         for (int i = 0; i < loop.size(); i++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             BlockVector2 a = loop.get(i), b = loop.get((i + 1) % loop.size());
             area += (long) a.x() * b.z() - (long) b.x() * a.z();
         }
@@ -498,10 +496,10 @@ public final class AutoExpandCommand implements TabExecutor {
     private record Edge(int sx, int sz, int ex, int ez) {}
     private record BridgePlan(BlockVector2 mainPoint, List<BlockVector2> secondaryPoints) {}
 
-    private List<BlockVector2> edgeLoopToBlockCoordinates(List<BlockVector2> loop, long deadline) {
+    private List<BlockVector2> edgeLoopToBlockCoordinates(List<BlockVector2> loop) {
         List<BlockVector2> result = new ArrayList<>();
         for (int i = 0; i < loop.size(); i++) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             BlockVector2 from = loop.get(i), to = loop.get((i + 1) % loop.size());
             int dx = to.x() - from.x(), dz = to.z() - from.z();
             BlockVector2 inside;
@@ -516,14 +514,14 @@ public final class AutoExpandCommand implements TabExecutor {
     }
 
     /** Removes vertices in the middle of a straight boundary run. */
-    private List<BlockVector2> simplifyCollinear(List<BlockVector2> loop, long deadline) {
+    private List<BlockVector2> simplifyCollinear(List<BlockVector2> loop) {
         List<BlockVector2> points = new ArrayList<>(loop);
         boolean changed = true;
         while (changed && points.size() > 3) {
-            checkDeadline(deadline);
+            ExecutionGuard.check();
             changed = false;
             for (int i = 0; i < points.size(); i++) {
-                checkDeadline(deadline);
+                ExecutionGuard.check();
                 BlockVector2 previous = points.get((i + points.size() - 1) % points.size());
                 BlockVector2 current = points.get(i);
                 BlockVector2 next = points.get((i + 1) % points.size());
@@ -569,5 +567,4 @@ public final class AutoExpandCommand implements TabExecutor {
 
     private record SearchNode(BlockVector3 position) {}
     private record SearchCenter(double x, double y, double z) {}
-    private static final class CalculationTimeoutException extends RuntimeException {}
 }

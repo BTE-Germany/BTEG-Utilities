@@ -8,6 +8,7 @@ import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import de.btegermany.utilities.BTEGUtilities;
+import de.btegermany.utilities.util.ExecutionGuard;
 import de.btegermany.utilities.util.TabUtil;
 import de.btegermany.utilities.util.worldedit.Converter;
 import de.btegermany.utilities.util.worldedit.SelectionEditSession;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -66,9 +68,11 @@ public class CurbCommand implements TabExecutor {
             return true;
         }
 
-        try {
+        try (ExecutionGuard ignored = ExecutionGuard.start(Duration.ofSeconds(5))) {
             WorldEditUtil.findSelection(player, session -> replaceCurbs(session, marker,
                     curbVariants.solid().getDefaultState(), stairStates));
+        } catch (ExecutionGuard.TimeoutException timeout) {
+            player.sendMessage(BTEGUtilities.PREFIX + "§cCurb processing exceeded its 5-second calculation limit; some blocks may already have been changed.");
         } catch (MaxChangedBlocksException | EmptyClipboardException exception) {
             player.sendMessage(BTEGUtilities.PREFIX + "§cAn error occurred while processing the curbs.");
             exception.printStackTrace();
@@ -143,6 +147,7 @@ public class CurbCommand implements TabExecutor {
         List<LineSegment> segments = new ArrayList<>();
         Map<BlockVector3, Set<SegmentDirection>> singletonNeighbors = new HashMap<>();
         region.forEach(pos -> {
+            ExecutionGuard.check();
             if (region.getWorld().getBlock(pos).getBlockType().equals(marker)) {
                 // FAWE's region iterator reuses a mutable vector; copy it before using it as a key.
                 BlockVector3 copiedPosition = BlockVector3.at(pos.x(), pos.y(), pos.z());
@@ -159,6 +164,7 @@ public class CurbCommand implements TabExecutor {
 
         // Claim each visible marker once, while allowing traces to pass through claimed junctions.
         while (!remainingBlocks.isEmpty()) {
+            ExecutionGuard.check();
             BlockVector3 pos = remainingBlocks.getFirst();
             remainingBlocks.remove(pos);
 
@@ -188,6 +194,7 @@ public class CurbCommand implements TabExecutor {
         Map<BlockVector3, List<LineSegment>> segmentsByBlock = indexSegmentsByBlock(segments);
         // Neighbor lengths and all axis facings are now available for replacement decisions.
         for (LineSegment segment : segments) {
+            ExecutionGuard.check();
             segment.resolveNeighborLengths(segmentsByBlock);
             plannedReplacements.putAll(getSegmentReplacements(
                     segment, solidState, stairStates, plannedFacings, plannedAxisFacings));
@@ -203,6 +210,7 @@ public class CurbCommand implements TabExecutor {
                 plannedAxisFacings, markerPositions, region, marker, solidState, stairStates);
 
         for (Map.Entry<BlockVector3, BlockState> replacement : plannedReplacements.entrySet()) {
+            ExecutionGuard.check();
             BlockVector3 position = replacement.getKey();
             session.editSession().setBlock(position.x(), position.y(), position.z(), replacement.getValue());
             session.changedBlocks().put(replacement.getKey(), replacement.getValue());
@@ -266,6 +274,7 @@ public class CurbCommand implements TabExecutor {
         String secondFacing = selectHalfFacing(secondFirstSide, secondSecondSide,
                 firstFirstSide, firstSecondSide, segment.axis());
         for (int i = 0; i < segment.blocks().size(); i++) {
+            ExecutionGuard.check();
             boolean firstHalf = i < split;
             boolean hasFirstSide = firstHalf ? firstFirstSide : secondFirstSide;
             boolean hasSecondSide = firstHalf ? firstSecondSide : secondSecondSide;
@@ -286,7 +295,9 @@ public class CurbCommand implements TabExecutor {
     private Map<BlockVector3, List<LineSegment>> indexSegmentsByBlock(List<LineSegment> segments) {
         Map<BlockVector3, List<LineSegment>> segmentsByBlock = new HashMap<>();
         for (LineSegment segment : segments) {
+            ExecutionGuard.check();
             for (BlockVector3 block : segment.blocks()) {
+                ExecutionGuard.check();
                 segmentsByBlock.computeIfAbsent(block, ignored -> new ArrayList<>()).add(segment);
             }
         }
@@ -301,6 +312,7 @@ public class CurbCommand implements TabExecutor {
                                          Region region, BlockType marker, BlockState solidState,
                                          Map<String, BlockState> stairStates) {
         for (BlockVector3 position : replacements.keySet()) {
+            ExecutionGuard.check();
             EnumMap<CardinalDirection, BlockVector3> neighbors = getCardinalMarkerNeighbors(
                     region, marker, position, markerPositions);
             int neighborCount = neighbors.size();
@@ -323,6 +335,7 @@ public class CurbCommand implements TabExecutor {
                                                                                 Set<BlockVector3> markerPositions) {
         EnumMap<CardinalDirection, BlockVector3> neighbors = new EnumMap<>(CardinalDirection.class);
         for (CardinalDirection direction : CardinalDirection.values()) {
+            ExecutionGuard.check();
             for (int dy : new int[]{1, 0, -1}) {
                 BlockVector3 neighbor = position.add(direction.dx(), dy, direction.dz());
                 if (markerPositions.contains(neighbor) && region.contains(neighbor)
@@ -389,6 +402,7 @@ public class CurbCommand implements TabExecutor {
                                         Map<String, BlockState> stairStates) {
         Set<String> distinctFacings = new HashSet<>();
         for (BlockVector3 neighbor : neighbors.values()) {
+            ExecutionGuard.check();
             String facing = plannedFacings.get(neighbor);
             if (facing != null) distinctFacings.add(facing);
         }
@@ -415,6 +429,7 @@ public class CurbCommand implements TabExecutor {
                                       BlockType marker, BlockState solidState,
                                       Map<String, BlockState> stairStates) {
         for (Map.Entry<BlockVector3, Set<SegmentDirection>> entry : singletonNeighbors.entrySet()) {
+            ExecutionGuard.check();
             BlockVector3 position = entry.getKey();
             Set<SegmentDirection> neighbors = entry.getValue();
             if (neighbors.size() == 4) {
@@ -586,6 +601,7 @@ public class CurbCommand implements TabExecutor {
                                 Set<BlockVector3> markerPositions) {
         BlockVector3 current = from;
         while (true) {
+            ExecutionGuard.check();
             BlockVector3 next = findNeighbor(session, region, current, marker, stepX, stepZ, markerPositions);
             if (next == null) {
                 checkEndpointDiagonals(session, region, marker, segment, current, stepX, stepZ, markerPositions);
@@ -606,7 +622,9 @@ public class CurbCommand implements TabExecutor {
                 ? new int[][]{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
                 : new int[][]{{stepX, stepZ}};
         for (int[] horizontal : horizontalOffsets) {
+            ExecutionGuard.check();
             for (int dy : verticalOffsets) {
+                ExecutionGuard.check();
                 BlockVector3 candidate = from.add(horizontal[0], dy, horizontal[1]);
                 if (region.contains(candidate)
                     && remainingBlocks.contains(candidate)
@@ -632,6 +650,7 @@ public class CurbCommand implements TabExecutor {
                     ? new int[][]{{0, -1}, {0, 1}}
                     : new int[][]{{-1, 0}, {1, 0}};
             for (int[] lateral : lateralOffsets) {
+            ExecutionGuard.check();
                 int dx = stepX + lateral[0];
                 int dz = stepZ + lateral[1];
                 SegmentDirection direction = dz < 0
@@ -647,6 +666,7 @@ public class CurbCommand implements TabExecutor {
                               LineSegment segment, BlockVector3 endpoint, int dx, int dz,
                               SegmentDirection direction, Set<BlockVector3> markerPositions) {
         for (int dy : new int[]{1, 0, -1}) {
+            ExecutionGuard.check();
             BlockVector3 candidate = endpoint.add(dx, dy, dz);
             if (markerPositions.contains(candidate) && region.contains(candidate)
                     && region.getWorld().getBlock(candidate).getBlockType().equals(marker)) {
@@ -702,6 +722,7 @@ public class CurbCommand implements TabExecutor {
         /** Resolves corner markers to neighboring runs so odd-length halves can compare run lengths. */
         private void resolveNeighborLengths(Map<BlockVector3, List<LineSegment>> segmentsByBlock) {
             for (Map.Entry<SegmentDirection, BlockVector3> neighbor : neighborPositions.entrySet()) {
+                ExecutionGuard.check();
                 List<LineSegment> candidates = segmentsByBlock.get(neighbor.getValue());
                 if (candidates == null) continue;
                 int length = candidates.stream()
