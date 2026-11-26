@@ -3,6 +3,7 @@ package de.btegermany.utilities;
 import de.btegermany.utilities.commands.*;
 import de.btegermany.utilities.events.FadeFormEvent;
 import de.btegermany.utilities.events.PlayerJoinLeaveGamemode;
+import de.btegermany.utilities.events.SelectionEditorListener;
 import de.btegermany.utilities.events.PlayerTeleport;
 import de.btegermany.utilities.events.PluginMessageListener;
 import de.btegermany.utilities.events.SchematicTabCompleteListener;
@@ -27,6 +28,7 @@ public final class BTEGUtilities extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerJoinLeaveGamemode(this.dndPlayersRegistry), this);
         getServer().getPluginManager().registerEvents(new FadeFormEvent(), this);
         getServer().getPluginManager().registerEvents(new PlayerTeleport(), this);
+        getServer().getPluginManager().registerEvents(new SelectionEditorListener(), this);
         getServer().getPluginManager().registerEvents(new SchematicTabCompleteListener(), this);
 
         Objects.requireNonNull(getCommand("cover")).setExecutor(new CoverCommand());
