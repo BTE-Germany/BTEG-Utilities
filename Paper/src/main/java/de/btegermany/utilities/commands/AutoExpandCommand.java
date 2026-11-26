@@ -78,7 +78,8 @@ public final class AutoExpandCommand implements TabExecutor {
         org.bukkit.World bukkitWorld = BukkitAdapter.adapt(selection.getWorld());
         Map<BlockVector3, Boolean> fullCubeCache = new HashMap<>();
         Set<BlockType> mask = new HashSet<>();
-        boolean automaticMask = maskInput.equalsIgnoreCase("auto");
+        String[] maskEntries = maskInput.split(",", -1);
+        boolean automaticMask = Arrays.stream(maskEntries).anyMatch(entry -> entry.equalsIgnoreCase("auto"));
         boolean autoMask = automaticMask || plotMode;
         if (autoMask) {
             for (int x = selection.getMinimumPoint().x(); x <= selection.getMaximumPoint().x(); x++)
@@ -100,9 +101,11 @@ public final class AutoExpandCommand implements TabExecutor {
                 mask.add(Objects.requireNonNull(BlockTypes.CLAY));
                 mask.add(Objects.requireNonNull(BlockTypes.LAPIS_BLOCK));
             }
-        } else {
+        }
+        if (!plotMode) {
             try {
-                for (String id : maskInput.split(",")) {
+                for (String id : maskEntries) {
+                    if (id.equalsIgnoreCase("auto")) continue;
                     if (id.isBlank()) throw new IllegalArgumentException("Empty block in mask");
                     BlockType type = Converter.getBlockType(id, player);
                     if (type.getMaterial().isAir()) {
@@ -546,7 +549,8 @@ public final class AutoExpandCommand implements TabExecutor {
         String partial = comma < 0 ? current : current.substring(comma + 1);
 
         List<String> suggestions = new ArrayList<>();
-        if (comma < 0 && "auto".startsWith(partial.toLowerCase(Locale.ROOT))) suggestions.add("auto");
+        if ("auto".startsWith(partial.toLowerCase(Locale.ROOT))) suggestions.add(prefix + "auto");
+        if (comma < 0 && "plot".startsWith(partial.toLowerCase(Locale.ROOT))) suggestions.add("plot");
         suggestions.addAll(de.btegermany.utilities.util.TabUtil.getBlockPatternSuggestions(partial, true).stream()
                 .filter(suggestion -> !isAirSuggestion(suggestion, sender))
                 .map(suggestion -> prefix + suggestion).toList());
