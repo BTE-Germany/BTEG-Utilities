@@ -28,7 +28,9 @@ public final class BTEGUtilities extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerJoinLeaveGamemode(this.dndPlayersRegistry), this);
         getServer().getPluginManager().registerEvents(new FadeFormEvent(), this);
         getServer().getPluginManager().registerEvents(new PlayerTeleport(), this);
-        getServer().getPluginManager().registerEvents(new SelectionEditorListener(), this);
+        SelectionEditorListener selectionEditorListener = new SelectionEditorListener();
+        getServer().getPluginManager().registerEvents(selectionEditorListener, this);
+        Objects.requireNonNull(getCommand("editmask")).setExecutor(selectionEditorListener);
         getServer().getPluginManager().registerEvents(new SchematicTabCompleteListener(), this);
 
         Objects.requireNonNull(getCommand("cover")).setExecutor(new CoverCommand());

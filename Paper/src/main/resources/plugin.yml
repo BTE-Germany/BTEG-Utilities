@@ -5,6 +5,7 @@ authors: [ Leander, JaskerX ]
 website: bte-germany.de
 api-version: 1.18
 depend: [PlaceholderAPI]
+softdepend: [SchematicBrushReborn]
 
 commands:
   regionfile:
@@ -87,6 +88,13 @@ commands:
     usage: //autoexpand <block[,block...]|auto|plot>
     aliases:
       - /autoexpand
+  editmask:
+    description: Sets or clears the temporary selection edit mask
+    usage: //editmask [FAWE mask expression]
+    aliases:
+      - /editmask
+      - emask
+      - /emask
   gradient:
     description: Applies a block gradient across or inward through a cuboid selection
     usage: //gradient [replace-blocks] <block[,block...]> <direction> [clean|grainy]
