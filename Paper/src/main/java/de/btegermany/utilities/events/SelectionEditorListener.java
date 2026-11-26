@@ -34,6 +34,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -49,7 +50,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /** Handles poly point editing, cuboid expansion, and selection move/stack controls. */
-public class SelectionEditorListener implements Listener, CommandExecutor {
+public class SelectionEditorListener implements Listener, CommandExecutor, TabCompleter {
 
     private static final double MAX_DISTANCE = 6.0;
     private static final double MAX_POINT_DISTANCE_SQUARED = 0.65 * 0.65;
@@ -197,13 +198,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor {
             return true;
         }
         try {
-            ParserContext context = new ParserContext();
-            var actor = BukkitAdapter.adapt(player);
-            context.setActor(actor);
-            context.setSession(state.session);
-            context.setWorld(selection.getWorld());
-            context.setExtent(selection.getWorld());
-            context.setTryLegacy(actor.getLimit().ALLOW_LEGACY);
+            ParserContext context = createParserContext(player, state.session, selection);
             state.mask = WorldEdit.getInstance().getMaskFactory().parseFromInput(expression, context);
             state.maskExpression = expression;
             state.acceptedCopies.clear();
@@ -213,6 +208,33 @@ public class SelectionEditorListener implements Listener, CommandExecutor {
             player.sendMessage("§cInvalid FAWE mask: " + exception.getMessage());
         }
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!(sender instanceof Player player)) return List.of();
+        EditState state = editStates.get(player.getUniqueId());
+        if (state == null) return List.of();
+        Region selection = getSelection(state.session);
+        if (selection == null) return List.of();
+        try {
+            String input = String.join(" ", args);
+            return WorldEdit.getInstance().getMaskFactory()
+                    .getSuggestions(input, createParserContext(player, state.session, selection));
+        } catch (RuntimeException exception) {
+            return List.of();
+        }
+    }
+
+    private ParserContext createParserContext(Player player, LocalSession session, Region selection) {
+        ParserContext context = new ParserContext();
+        var actor = BukkitAdapter.adapt(player);
+        context.setActor(actor);
+        context.setSession(session);
+        context.setWorld(selection.getWorld());
+        context.setExtent(selection.getWorld());
+        context.setTryLegacy(actor.getLimit().ALLOW_LEGACY);
+        return context;
     }
 
     private void editPolyPoint(PlayerSwapHandItemsEvent event, Player player, LocalSession session, Polygonal2DRegion region) {

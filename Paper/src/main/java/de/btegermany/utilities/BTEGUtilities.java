@@ -31,6 +31,7 @@ public final class BTEGUtilities extends JavaPlugin {
         SelectionEditorListener selectionEditorListener = new SelectionEditorListener();
         getServer().getPluginManager().registerEvents(selectionEditorListener, this);
         Objects.requireNonNull(getCommand("editmask")).setExecutor(selectionEditorListener);
+        Objects.requireNonNull(getCommand("editmask")).setTabCompleter(selectionEditorListener);
         getServer().getPluginManager().registerEvents(new SchematicTabCompleteListener(), this);
 
         Objects.requireNonNull(getCommand("cover")).setExecutor(new CoverCommand());
