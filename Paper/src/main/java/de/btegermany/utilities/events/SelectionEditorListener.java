@@ -23,9 +23,13 @@ import org.bukkit.Location;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
@@ -39,6 +43,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import de.btegermany.utilities.BTEGUtilities;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,6 +68,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         EditState active = editStates.get(player.getUniqueId());
         if (active != null) {
             event.setCancelled(true);
+            flushScrollInputs(player, active);
             active.mode = switch (active.mode) {
                 case MOVE -> {
                     Arrays.fill(active.move, 0);
@@ -79,7 +85,6 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             };
             if (active.mode == Mode.NORMAL) {
                 stopEditing(player, active);
-                showMode(player, Mode.NORMAL);
             } else {
                 showMode(player, active);
                 refreshPreview(player, active, true);
@@ -99,7 +104,8 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 expandCuboid(event, player, session, cuboid);
                 if (event.isCancelled()) return;
             }
-        } else if (region instanceof Polygonal2DRegion polyRegion) {
+        } else {
+            Polygonal2DRegion polyRegion = (Polygonal2DRegion) region;
             editPolyPoint(event, player, session, polyRegion);
             if (event.isCancelled()) return;
         }
@@ -119,37 +125,69 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         if (region instanceof CuboidRegion cuboid) expandCuboid(event, player, session, cuboid);
     }
 
+    private static int calculateSlotDelta(int from, int to) {
+        return Math.floorMod(to - from + 4, 9) - 4;
+    }
+
     @EventHandler
     public void onHotbarChange(PlayerItemHeldEvent event) {
         EditState state = editStates.get(event.getPlayer().getUniqueId());
         if (state == null) return;
         event.setCancelled(true);
-        int delta = normalizeSlotDelta(event.getNewSlot() - state.lastVirtualSlot);
-        if (delta == 0 && event.getNewSlot() != event.getPreviousSlot()) {
-            delta = normalizeSlotDelta(event.getNewSlot() - event.getPreviousSlot());
-        }
-        state.lastVirtualSlot = event.getNewSlot();
+        int delta = calculateSlotDelta(event.getPreviousSlot(), event.getNewSlot());
         scheduleSlotReset(event.getPlayer(), state);
         if (delta == 0) return;
 
         int axis = dominantAxis(event.getPlayer().getEyeLocation().getDirection());
         int direction = -axisDirection(event.getPlayer().getEyeLocation().getDirection(), axis) * Integer.signum(delta);
-        int amount = Math.abs(delta);
-        if (state.mode == Mode.MOVE) {
-            state.move[axis] = Math.clamp(state.move[axis] + direction * amount, -64, 64);
-        } else if (state.mode == Mode.COPY) {
-            state.copy[axis] = Math.clamp(state.copy[axis] + direction * amount, -64, 64);
-        } else {
-            int facingDirection = axisDirection(event.getPlayer().getEyeLocation().getDirection(), axis);
-            int directionIndex = axis * 2 + (facingDirection > 0 ? 1 : 0);
-            boolean scrollingForward = direction == facingDirection;
-            state.stack[directionIndex] = Math.clamp(state.stack[directionIndex] + (scrollingForward ? amount : -amount), 0, 64);
+        state.pendingScrollInputs.add(new ScrollInput(axis, direction, Math.abs(delta)));
+        if (state.pendingScrollTask == null) {
+            state.pendingScrollTask = Bukkit.getScheduler().runTaskLater(BTEGUtilities.getPlugin(),
+                    () -> flushScrollInputs(event.getPlayer(), state), 3L);
         }
-        showMode(event.getPlayer(), state);
-        refreshPreview(event.getPlayer(), state, true);
     }
 
-    @EventHandler
+    private void flushScrollInputs(Player player, EditState state) {
+        if (state.pendingScrollTask != null) {
+            state.pendingScrollTask.cancel();
+            state.pendingScrollTask = null;
+        }
+        if (state.pendingScrollInputs.isEmpty()) return;
+
+        int[][] counts = new int[3][2];
+        int scrollAmount = 0;
+        ScrollInput latest = state.pendingScrollInputs.get(state.pendingScrollInputs.size() - 1);
+        for (ScrollInput input : state.pendingScrollInputs) {
+            counts[input.axis][input.direction > 0 ? 1 : 0] += input.amount;
+            scrollAmount += input.amount;
+        }
+        int bestAxis = latest.axis;
+        int bestDirection = latest.direction;
+        int bestCount = counts[bestAxis][bestDirection > 0 ? 1 : 0];
+        for (int axis = 0; axis < 3; axis++) {
+            for (int directionIndex = 0; directionIndex < 2; directionIndex++) {
+                if (counts[axis][directionIndex] > bestCount) {
+                    bestAxis = axis;
+                    bestDirection = directionIndex == 1 ? 1 : -1;
+                    bestCount = counts[axis][directionIndex];
+                }
+            }
+        }
+        state.pendingScrollInputs.clear();
+
+        if (state.mode == Mode.MOVE) {
+            state.move[bestAxis] = Math.clamp(state.move[bestAxis] + (long) bestDirection * scrollAmount, -64, 64);
+        } else if (state.mode == Mode.COPY) {
+            state.copy[bestAxis] = Math.clamp(state.copy[bestAxis] + (long) bestDirection * scrollAmount, -64, 64);
+        } else {
+            state.stack[bestAxis] = Math.clamp(state.stack[bestAxis] + (long) bestDirection * scrollAmount, -64, 64);
+        }
+
+        showMode(player, state);
+        refreshPreview(player, state, true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onEditClick(PlayerInteractEvent event) {
         EditState state = editStates.get(event.getPlayer().getUniqueId());
         if (state == null) return;
@@ -158,12 +196,12 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 && action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
 
         event.setCancelled(true);
+        flushScrollInputs(event.getPlayer(), state);
         if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
             if (state.mode == Mode.COPY) commitCopy(event.getPlayer(), state);
             else commit(event.getPlayer(), state);
         } else {
             stopEditing(event.getPlayer(), state);
-            showMode(event.getPlayer(), Mode.NORMAL);
         }
     }
 
@@ -174,7 +212,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NonNull CommandSender sender, @NonNull Command command, @NonNull String label, String @NonNull [] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("This command can only be used by a player.");
             return true;
@@ -213,7 +251,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(@NonNull CommandSender sender, @NonNull Command command, @NonNull String alias, String @NonNull [] args) {
         if (!(sender instanceof Player player)) return List.of();
         EditState state = editStates.get(player.getUniqueId());
         if (state == null) return List.of();
@@ -270,11 +308,11 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     private void commit(Player player, EditState state) {
         stopEditing(player, state);
         try {
-            Region currentSelection = getSelection(state.session);
-            if (!(currentSelection instanceof CuboidRegion) && !(currentSelection instanceof Polygonal2DRegion)) {
+            Region sourceRegion = state.previewSelection;
+            if (!(sourceRegion instanceof CuboidRegion) && !(sourceRegion instanceof Polygonal2DRegion)) {
                 throw new IllegalStateException("The current selection is missing or is no longer a cuboid or polygon.");
             }
-            Region sourceRegion = copyRegion(currentSelection);
+            sourceRegion = copyRegion(sourceRegion);
             BlockVector3 movement = BlockVector3.at(state.move[0], state.move[1], state.move[2]);
             BlockVector3 dimensions = sourceRegion.getDimensions();
             BlockVector3 moveDestination = sourceRegion.getMinimumPoint().add(movement);
@@ -294,9 +332,9 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                     pasteAt(editSession, clipboard, moveDestination, state.mask != null);
                 }
 
-                List<Integer> xOffsets = stackOffsets(state.stack[0], state.stack[1], dimensions.x());
-                List<Integer> yOffsets = stackOffsets(state.stack[2], state.stack[3], dimensions.y());
-                List<Integer> zOffsets = stackOffsets(state.stack[4], state.stack[5], dimensions.z());
+                List<Integer> xOffsets = stackOffsets(state.stack[0], dimensions.x());
+                List<Integer> yOffsets = stackOffsets(state.stack[1], dimensions.y());
+                List<Integer> zOffsets = stackOffsets(state.stack[2], dimensions.z());
                 for (int x : xOffsets) for (int y : yOffsets) for (int z : zOffsets) {
                     if (x == 0 && y == 0 && z == 0) continue;
                     pasteAt(editSession, clipboard, moveDestination.add(x, y, z), state.mask != null);
@@ -312,15 +350,12 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 state.session.setRegionSelector(sourceRegion.getWorld(), selector);
                 state.session.dispatchCUISelection(BukkitAdapter.adapt(player));
             }
-            showMode(player, Mode.NORMAL);
         } catch (RuntimeException exception) {
             player.sendMessage("§cCould not apply the selection edit: " + exception.getMessage());
-            showMode(player, Mode.NORMAL);
         }
     }
 
     private void startPreview(Player player, EditState state) {
-        if (getPreviewService() == null) return;
         refreshPreview(player, state, true);
         state.selectionWatcher = Bukkit.getScheduler().runTaskTimer(BTEGUtilities.getPlugin(), () -> {
             if (editStates.get(player.getUniqueId()) != state) {
@@ -344,8 +379,6 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     }
 
     private void refreshPreview(Player player, EditState state, boolean force) {
-        Object previewService = getPreviewService();
-        if (previewService == null) return;
         Region selection = getSelection(state.session);
         if (!(selection instanceof CuboidRegion) && !(selection instanceof Polygonal2DRegion)) {
             selection = null;
@@ -356,6 +389,10 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             state.acceptedCopies.clear();
         }
         state.selectionSignature = signature;
+        state.previewSelection = selection == null ? null : copyRegion(selection);
+
+        Object previewService = getPreviewService();
+        if (previewService == null) return;
 
         Map<Location, BlockData> changes = Map.of();
         boolean exceededLimit = false;
@@ -379,7 +416,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             BTEGUtilities.getPlugin().getLogger().warning("Could not update the SchematicBrush preview: " + exception.getMessage());
             closePreview(state);
         }
-        if (exceededLimit) player.sendActionBar("§cPreview is too large to display; the edit can still be applied.");
+        if (exceededLimit) player.sendMessage("§cPreview is too large to display; the edit can still be applied.");
         else showMode(player, state);
     }
 
@@ -394,12 +431,9 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         }
 
         BlockVector3 dimensions = region.getDimensions();
-        List<Integer> xOffsets = state.mode == Mode.STACK
-                ? stackOffsets(state.stack[0], state.stack[1], dimensions.x()) : List.of(0);
-        List<Integer> yOffsets = state.mode == Mode.STACK
-                ? stackOffsets(state.stack[2], state.stack[3], dimensions.y()) : List.of(0);
-        List<Integer> zOffsets = state.mode == Mode.STACK
-                ? stackOffsets(state.stack[4], state.stack[5], dimensions.z()) : List.of(0);
+        List<Integer> xOffsets = state.mode == Mode.STACK ? stackOffsets(state.stack[0], dimensions.x()) : List.of(0);
+        List<Integer> yOffsets = state.mode == Mode.STACK ? stackOffsets(state.stack[1], dimensions.y()) : List.of(0);
+        List<Integer> zOffsets = state.mode == Mode.STACK ? stackOffsets(state.stack[2], dimensions.z()) : List.of(0);
         long translations = (long) xOffsets.size() * yOffsets.size() * zOffsets.size();
         long volume = region.getVolume();
         long previewBlockCount = volume * translations;
@@ -434,18 +468,18 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     }
 
     private void commitCopy(Player player, EditState state) {
-        Region currentSelection = getSelection(state.session);
-        if (!(currentSelection instanceof CuboidRegion) && !(currentSelection instanceof Polygonal2DRegion)) {
+        Region sourceRegion = state.previewSelection;
+        if (!(sourceRegion instanceof CuboidRegion) && !(sourceRegion instanceof Polygonal2DRegion)) {
             player.sendMessage("§cThe current selection is missing or is no longer a cuboid or polygon.");
             return;
         }
         BlockVector3 offset = BlockVector3.at(state.copy[0], state.copy[1], state.copy[2]);
         if (offset.equals(BlockVector3.ZERO) || state.acceptedCopies.contains(offset)) {
-            player.sendActionBar("§eNo new copy at this position. Scroll to place another copy.");
+            player.sendMessage("§eNo new copy at this position. Scroll to place another copy.");
             return;
         }
 
-        Region sourceRegion = copyRegion(currentSelection);
+        sourceRegion = copyRegion(sourceRegion);
         try {
             var editSession = state.session.createEditSession(BukkitAdapter.adapt(player));
             try (editSession) {
@@ -526,8 +560,15 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
 
     private void stopEditing(Player player, EditState state) {
         editStates.remove(player.getUniqueId());
+        if (state.pendingScrollTask != null) state.pendingScrollTask.cancel();
+        state.pendingScrollInputs.clear();
         if (state.selectionWatcher != null) state.selectionWatcher.cancel();
         closePreview(state);
+        if (state.modeBar != null) {
+            state.modeBar.removeAll();
+            state.modeBar.setVisible(false);
+            state.modeBar = null;
+        }
         if (player.isOnline()) {
             player.getInventory().setHeldItemSlot(state.lockedSlot);
             player.updateInventory();
@@ -542,9 +583,10 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 .createPaste(editSession).to(destination).ignoreAirBlocks(ignoreAir).build());
     }
 
-    private List<Integer> stackOffsets(int negativeCount, int positiveCount, int dimension) {
+    private List<Integer> stackOffsets(int count, int dimension) {
         List<Integer> offsets = new ArrayList<>();
-        for (int i = -negativeCount; i <= positiveCount; i++) offsets.add(i * dimension);
+        int direction = Integer.signum(count);
+        for (int i = 0; i <= Math.abs(count); i++) offsets.add(i * dimension * direction);
         return offsets;
     }
 
@@ -596,12 +638,6 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         return x >= y && x >= z ? 0 : y >= z ? 1 : 2;
     }
 
-    private int normalizeSlotDelta(int delta) {
-        if (delta > 4) return delta - 9;
-        if (delta < -4) return delta + 9;
-        return delta;
-    }
-
     private int axisDirection(Vector direction, int axis) {
         double component = axis == 0 ? direction.getX() : axis == 1 ? direction.getY() : direction.getZ();
         return component >= 0 ? 1 : -1;
@@ -624,27 +660,20 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         return closestIndex;
     }
 
-    private void showMode(Player player, Mode mode) {
-        String text = switch (mode) {
-            case NORMAL -> "";
-            case MOVE -> "§eSelection: MOVE  §7Scroll to move · F: Copy · Right click: apply · Left click: cancel";
-            case COPY -> "§eSelection: COPY  §7Scroll to move copy · Right click: place · Left click: exit";
-            case STACK -> "§eSelection: STACK  §7Scroll to stack · F: Exit · Right click: apply · Left click: cancel";
-        };
-        player.sendActionBar(text);
-    }
-
     private void showMode(Player player, EditState state) {
+        if (state.modeBar == null) {
+            state.modeBar = Bukkit.createBossBar("", BarColor.BLUE, BarStyle.SOLID);
+            state.modeBar.addPlayer(player);
+        }
         if (state.mode == Mode.MOVE) {
-            player.sendActionBar("§eSelection: MOVE §f[" + state.move[0] + ", " + state.move[1] + ", " + state.move[2]
-                    + "] §7Scroll to move · F: Copy · Right click: apply · Left click: cancel");
+            state.modeBar.setTitle("§eMOVE §f[" + state.move[0] + ", " + state.move[1] + ", " + state.move[2]
+                    + "] §7Scroll to move · Right click: apply · Left click: exit");
         } else if (state.mode == Mode.COPY) {
-            player.sendActionBar("§eSelection: COPY §f[" + state.copy[0] + ", " + state.copy[1] + ", " + state.copy[2]
+            state.modeBar.setTitle("§eCOPY §f[" + state.copy[0] + ", " + state.copy[1] + ", " + state.copy[2]
                     + "] §7Scroll to move copy · Right click: place · Left click: exit");
         } else {
-            player.sendActionBar("§eSelection: STACK §f[N:" + state.stack[4] + " S:" + state.stack[5]
-                    + " E:" + state.stack[1] + " W:" + state.stack[0] + " U:" + state.stack[3] + " D:" + state.stack[2]
-                    + "] §7Scroll to stack · F: Exit · Right click: apply · Left click: cancel");
+            state.modeBar.setTitle("§eSTACK §f[X:" + state.stack[0] + " Y:" + state.stack[1] + " Z:" + state.stack[2]
+                    + "] §7Scroll to stack · Right click: apply · Left click: exit");
         }
     }
 
@@ -655,16 +684,20 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         private final int[] move = new int[3];
         private final int[] copy = new int[3];
         private final java.util.Set<BlockVector3> acceptedCopies = new java.util.HashSet<>();
-        // Per signed axis: -X, +X, -Y, +Y, -Z, +Z.
-        private final int[] stack = new int[6];
+        // One signed count per axis, with zero representing the original selection.
+        private final int[] stack = new int[3];
         private Object previewHandle;
         private Object selectionSignature;
+        private Region previewSelection;
         private BukkitTask selectionWatcher;
         private int lastVirtualSlot;
+        private final List<ScrollInput> pendingScrollInputs = new ArrayList<>();
+        private BukkitTask pendingScrollTask;
         private final int lockedSlot;
         private boolean slotResetScheduled;
         private Mask mask;
         private String maskExpression;
+        private BossBar modeBar;
         private Mode mode = Mode.MOVE;
 
         private EditState(LocalSession session, int initialSlot) {
@@ -673,4 +706,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             this.lockedSlot = initialSlot;
         }
     }
+
+    private record ScrollInput(int axis, int direction, int amount) { }
+
 }
