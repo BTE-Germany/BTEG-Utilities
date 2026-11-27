@@ -99,6 +99,9 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 expandCuboid(event, player, session, cuboid);
                 if (event.isCancelled()) return;
             }
+        } else if (region instanceof Polygonal2DRegion polyRegion) {
+            editPolyPoint(event, player, session, polyRegion);
+            if (event.isCancelled()) return;
         }
 
         // Holding the standard WorldEdit wand enters the two-mode editor.
@@ -113,8 +116,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
 
         // Keep the point reorder and cuboid expansion shortcuts available when
         // the player is not holding the wand used to enter edit mode.
-        if (region instanceof Polygonal2DRegion polyRegion) editPolyPoint(event, player, session, polyRegion);
-        else if (region instanceof CuboidRegion cuboid) expandCuboid(event, player, session, cuboid);
+        if (region instanceof CuboidRegion cuboid) expandCuboid(event, player, session, cuboid);
     }
 
     @EventHandler
