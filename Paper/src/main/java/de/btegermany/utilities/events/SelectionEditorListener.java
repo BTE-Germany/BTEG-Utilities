@@ -22,6 +22,7 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.Location;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -33,6 +34,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.command.Command;
@@ -73,12 +75,14 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 case MOVE -> {
                     Arrays.fill(active.move, 0);
                     Arrays.fill(active.copy, 0);
+                    active.rotationSteps = 0;
                     yield Mode.COPY;
                 }
                 case COPY -> {
                     Arrays.fill(active.copy, 0);
                     Arrays.fill(active.move, 0);
                     Arrays.fill(active.stack, 0);
+                    active.rotationSteps = 0;
                     yield Mode.STACK;
                 }
                 case STACK, NORMAL -> Mode.NORMAL;
@@ -123,6 +127,17 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         // Keep the point reorder and cuboid expansion shortcuts available when
         // the player is not holding the wand used to enter edit mode.
         if (region instanceof CuboidRegion cuboid) expandCuboid(event, player, session, cuboid);
+    }
+
+    @EventHandler
+    public void onItemDrop(PlayerDropItemEvent event) {
+        EditState state = editStates.get(event.getPlayer().getUniqueId());
+        if (state == null) return;
+        event.setCancelled(true);
+        if (state.mode != Mode.MOVE && state.mode != Mode.COPY) return;
+        state.rotationSteps = (state.rotationSteps + 1) % 4;
+        showMode(event.getPlayer(), state);
+        refreshPreview(event.getPlayer(), state, true);
     }
 
     private static int calculateSlotDelta(int from, int to) {
@@ -321,15 +336,26 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             var editSession = state.session.createEditSession(BukkitAdapter.adapt(player));
             try (editSession) {
                 BlockArrayClipboard clipboard = createClipboard(sourceRegion, state.mask);
+                Map<BlockVector3, BlockData> rotatedBlocks = state.rotationSteps == 0 ? Map.of()
+                        : captureBlocks(sourceRegion, state.mask);
 
-                if (!movement.equals(BlockVector3.ZERO)) {
+                if (!movement.equals(BlockVector3.ZERO) || state.rotationSteps != 0) {
                     if (state.mask == null) {
                         editSession.setBlocks(sourceRegion, BlockTypes.AIR.getDefaultState());
                     } else {
                         for (BlockVector3 position : matchingSourcePositions)
                             editSession.setBlock(position, BlockTypes.AIR.getDefaultState());
                     }
-                    pasteAt(editSession, clipboard, moveDestination, state.mask != null);
+                    if (state.rotationSteps == 0) {
+                        if (!movement.equals(BlockVector3.ZERO)) {
+                            pasteAt(editSession, clipboard, moveDestination, state.mask != null);
+                        }
+                    } else {
+                        for (Map.Entry<BlockVector3, BlockData> block : rotatedBlocks.entrySet()) {
+                            BlockVector3 destination = rotatePosition(block.getKey(), sourceRegion, state.rotationSteps).add(movement);
+                            editSession.setBlock(destination, BukkitAdapter.adapt(rotateBlockData(block.getValue(), state.rotationSteps)));
+                        }
+                    }
                 }
 
                 List<Integer> xOffsets = stackOffsets(state.stack[0], dimensions.x());
@@ -379,7 +405,8 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     }
 
     private void refreshPreview(Player player, EditState state, boolean force) {
-        Region selection = getSelection(state.session);
+        Region selection = state.suppressSelectionRefresh && state.previewSelection != null
+                ? copyRegion(state.previewSelection) : getSelection(state.session);
         if (!(selection instanceof CuboidRegion) && !(selection instanceof Polygonal2DRegion)) {
             selection = null;
         }
@@ -461,10 +488,57 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             if (x == 0 && y == 0 && z == 0 && baseOffset.equals(BlockVector3.ZERO)) continue;
             BlockVector3 offset = baseOffset.add(x, y, z);
             for (Map.Entry<BlockVector3, BlockData> block : source.entrySet()) {
-                changes.put(toLocation(world, block.getKey().add(offset)), block.getValue());
+                BlockVector3 position = block.getKey();
+                BlockData data = block.getValue();
+                if ((state.mode == Mode.MOVE || state.mode == Mode.COPY) && state.rotationSteps != 0) {
+                    position = rotatePosition(position, region, state.rotationSteps);
+                    data = rotateBlockData(data, state.rotationSteps);
+                }
+                changes.put(toLocation(world, position.add(offset)), data);
             }
         }
         return changes;
+    }
+
+    private Map<BlockVector3, BlockData> captureBlocks(Region region, Mask mask) {
+        Map<BlockVector3, BlockData> blocks = new HashMap<>();
+        for (BlockVector3 position : region) {
+            BlockVector3 stablePosition = BlockVector3.at(position.x(), position.y(), position.z());
+            if (mask != null && !mask.test(stablePosition)) continue;
+            blocks.put(stablePosition, BukkitAdapter.adapt(region.getWorld().getBlock(stablePosition)));
+        }
+        return blocks;
+    }
+
+    private BlockVector3 rotatePosition(BlockVector3 position, Region region, int quarterTurns) {
+        int sumX = region.getMinimumPoint().x() + region.getMaximumPoint().x();
+        int sumZ = region.getMinimumPoint().z() + region.getMaximumPoint().z();
+        int x;
+        int z;
+        switch (Math.floorMod(quarterTurns, 4)) {
+            case 1 -> {
+                x = Math.floorDiv(sumX + sumZ - 2 * position.z(), 2);
+                z = Math.floorDiv(sumZ + 2 * position.x() - sumX, 2);
+            }
+            case 2 -> {
+                x = sumX - position.x();
+                z = sumZ - position.z();
+            }
+            case 3 -> {
+                x = Math.floorDiv(sumX + 2 * position.z() - sumZ, 2);
+                z = Math.floorDiv(sumZ - 2 * position.x() + sumX, 2);
+            }
+            default -> {
+                return position;
+            }
+        }
+        return BlockVector3.at(x, position.y(), z);
+    }
+
+    private BlockData rotateBlockData(BlockData blockData, int quarterTurns) {
+        BlockData rotated = blockData.clone();
+        for (int i = 0; i < Math.floorMod(quarterTurns, 4); i++) rotated.rotate(StructureRotation.CLOCKWISE_90);
+        return rotated;
     }
 
     private void commitCopy(Player player, EditState state) {
@@ -473,18 +547,27 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             player.sendMessage("§cThe current selection is missing or is no longer a cuboid or polygon.");
             return;
         }
+        sourceRegion = copyRegion(sourceRegion);
+        restoreCopySelection(player, state, sourceRegion);
         BlockVector3 offset = BlockVector3.at(state.copy[0], state.copy[1], state.copy[2]);
         if (offset.equals(BlockVector3.ZERO) || state.acceptedCopies.contains(offset)) {
             player.sendMessage("§eNo new copy at this position. Scroll to place another copy.");
             return;
         }
 
-        sourceRegion = copyRegion(sourceRegion);
         try {
             var editSession = state.session.createEditSession(BukkitAdapter.adapt(player));
             try (editSession) {
-                BlockArrayClipboard clipboard = createClipboard(sourceRegion, state.mask);
-                pasteAt(editSession, clipboard, sourceRegion.getMinimumPoint().add(offset), state.mask != null);
+                if (state.rotationSteps == 0) {
+                    BlockArrayClipboard clipboard = createClipboard(sourceRegion, state.mask);
+                    pasteAt(editSession, clipboard, sourceRegion.getMinimumPoint().add(offset), state.mask != null);
+                } else {
+                    Map<BlockVector3, BlockData> blocks = captureBlocks(sourceRegion, state.mask);
+                    for (Map.Entry<BlockVector3, BlockData> block : blocks.entrySet()) {
+                        BlockVector3 destination = rotatePosition(block.getKey(), sourceRegion, state.rotationSteps).add(offset);
+                        editSession.setBlock(destination, BukkitAdapter.adapt(rotateBlockData(block.getValue(), state.rotationSteps)));
+                    }
+                }
             }
             rememberEdit(player, state.session, editSession);
             state.acceptedCopies.add(offset);
@@ -492,6 +575,22 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         } catch (RuntimeException exception) {
             player.sendMessage("§cCould not place the copy: " + exception.getMessage());
         }
+    }
+
+    private void restoreCopySelection(Player player, EditState state, Region selection) {
+        state.suppressSelectionRefresh = true;
+        state.previewSelection = copyRegion(selection);
+        state.session.setRegionSelector(selection.getWorld(), shiftedSelector(selection, BlockVector3.ZERO));
+        state.session.dispatchCUISelection(BukkitAdapter.adapt(player));
+        if (state.selectionRestoreTask != null) state.selectionRestoreTask.cancel();
+        state.selectionRestoreTask = Bukkit.getScheduler().runTaskLater(BTEGUtilities.getPlugin(), () -> {
+            if (editStates.get(player.getUniqueId()) != state || !player.isOnline()) return;
+            state.session.setRegionSelector(selection.getWorld(), shiftedSelector(selection, BlockVector3.ZERO));
+            state.session.dispatchCUISelection(BukkitAdapter.adapt(player));
+            state.suppressSelectionRefresh = false;
+            refreshPreview(player, state, true);
+            state.selectionRestoreTask = null;
+        }, 1L);
     }
 
     private BlockArrayClipboard createClipboard(Region region, Mask mask) {
@@ -563,6 +662,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         if (state.pendingScrollTask != null) state.pendingScrollTask.cancel();
         state.pendingScrollInputs.clear();
         if (state.selectionWatcher != null) state.selectionWatcher.cancel();
+        if (state.selectionRestoreTask != null) state.selectionRestoreTask.cancel();
         closePreview(state);
         if (state.modeBar != null) {
             state.modeBar.removeAll();
@@ -667,10 +767,10 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         }
         if (state.mode == Mode.MOVE) {
             state.modeBar.setTitle("§eMOVE §f[" + state.move[0] + ", " + state.move[1] + ", " + state.move[2]
-                    + "] §7Scroll to move · Right click: apply · Left click: exit");
+                    + "] §7Q: rotate " + (state.rotationSteps * 90) + "° · Scroll to move · Right click: apply · Left click: exit");
         } else if (state.mode == Mode.COPY) {
             state.modeBar.setTitle("§eCOPY §f[" + state.copy[0] + ", " + state.copy[1] + ", " + state.copy[2]
-                    + "] §7Scroll to move copy · Right click: place · Left click: exit");
+                    + "] §7Q: rotate " + (state.rotationSteps * 90) + "° · Scroll to move copy · Right click: place · Left click: exit");
         } else {
             state.modeBar.setTitle("§eSTACK §f[X:" + state.stack[0] + " Y:" + state.stack[1] + " Z:" + state.stack[2]
                     + "] §7Scroll to stack · Right click: apply · Left click: exit");
@@ -690,7 +790,10 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         private Object selectionSignature;
         private Region previewSelection;
         private BukkitTask selectionWatcher;
+        private BukkitTask selectionRestoreTask;
+        private boolean suppressSelectionRefresh;
         private int lastVirtualSlot;
+        private int rotationSteps;
         private final List<ScrollInput> pendingScrollInputs = new ArrayList<>();
         private BukkitTask pendingScrollTask;
         private final int lockedSlot;
