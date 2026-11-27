@@ -23,6 +23,10 @@ import org.bukkit.Location;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.structure.StructureRotation;
+import org.bukkit.block.structure.Mirror;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -75,14 +79,14 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
                 case MOVE -> {
                     Arrays.fill(active.move, 0);
                     Arrays.fill(active.copy, 0);
-                    active.rotationSteps = 0;
+                    active.transforms.clear();
                     yield Mode.COPY;
                 }
                 case COPY -> {
                     Arrays.fill(active.copy, 0);
                     Arrays.fill(active.move, 0);
                     Arrays.fill(active.stack, 0);
-                    active.rotationSteps = 0;
+                    active.transforms.clear();
                     yield Mode.STACK;
                 }
                 case STACK, NORMAL -> Mode.NORMAL;
@@ -135,7 +139,12 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         if (state == null) return;
         event.setCancelled(true);
         if (state.mode != Mode.MOVE && state.mode != Mode.COPY) return;
-        state.rotationSteps = (state.rotationSteps + 1) % 4;
+        if (event.getPlayer().isSneaking()) {
+            int axis = dominantAxis(event.getPlayer().getEyeLocation().getDirection());
+            state.transforms.add(new TransformOp(false, axis));
+        } else {
+            state.transforms.add(new TransformOp(true, -1));
+        }
         showMode(event.getPlayer(), state);
         refreshPreview(event.getPlayer(), state, true);
     }
@@ -336,24 +345,25 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             var editSession = state.session.createEditSession(BukkitAdapter.adapt(player));
             try (editSession) {
                 BlockArrayClipboard clipboard = createClipboard(sourceRegion, state.mask);
-                Map<BlockVector3, BlockData> rotatedBlocks = state.rotationSteps == 0 ? Map.of()
+                boolean transformed = hasBlockTransform(state);
+                Map<BlockVector3, BlockData> rotatedBlocks = !transformed ? Map.of()
                         : captureBlocks(sourceRegion, state.mask);
 
-                if (!movement.equals(BlockVector3.ZERO) || state.rotationSteps != 0) {
+                if (!movement.equals(BlockVector3.ZERO) || transformed) {
                     if (state.mask == null) {
                         editSession.setBlocks(sourceRegion, BlockTypes.AIR.getDefaultState());
                     } else {
                         for (BlockVector3 position : matchingSourcePositions)
                             editSession.setBlock(position, BlockTypes.AIR.getDefaultState());
                     }
-                    if (state.rotationSteps == 0) {
+                    if (!transformed) {
                         if (!movement.equals(BlockVector3.ZERO)) {
                             pasteAt(editSession, clipboard, moveDestination, state.mask != null);
                         }
                     } else {
                         for (Map.Entry<BlockVector3, BlockData> block : rotatedBlocks.entrySet()) {
-                            BlockVector3 destination = rotatePosition(block.getKey(), sourceRegion, state.rotationSteps).add(movement);
-                            editSession.setBlock(destination, BukkitAdapter.adapt(rotateBlockData(block.getValue(), state.rotationSteps)));
+                            BlockVector3 destination = transformPosition(block.getKey(), sourceRegion, state).add(movement);
+                            editSession.setBlock(destination, BukkitAdapter.adapt(transformBlockData(block.getValue(), state)));
                         }
                     }
                 }
@@ -490,9 +500,9 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
             for (Map.Entry<BlockVector3, BlockData> block : source.entrySet()) {
                 BlockVector3 position = block.getKey();
                 BlockData data = block.getValue();
-                if ((state.mode == Mode.MOVE || state.mode == Mode.COPY) && state.rotationSteps != 0) {
-                    position = rotatePosition(position, region, state.rotationSteps);
-                    data = rotateBlockData(data, state.rotationSteps);
+                if ((state.mode == Mode.MOVE || state.mode == Mode.COPY) && hasBlockTransform(state)) {
+                    position = transformPosition(position, region, state);
+                    data = transformBlockData(data, state);
                 }
                 changes.put(toLocation(world, position.add(offset)), data);
             }
@@ -510,35 +520,53 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         return blocks;
     }
 
-    private BlockVector3 rotatePosition(BlockVector3 position, Region region, int quarterTurns) {
+    private BlockVector3 transformPosition(BlockVector3 position, Region region, EditState state) {
+        int x = position.x();
+        int y = position.y();
+        int z = position.z();
         int sumX = region.getMinimumPoint().x() + region.getMaximumPoint().x();
         int sumZ = region.getMinimumPoint().z() + region.getMaximumPoint().z();
-        int x;
-        int z;
-        switch (Math.floorMod(quarterTurns, 4)) {
-            case 1 -> {
-                x = Math.floorDiv(sumX + sumZ - 2 * position.z(), 2);
-                z = Math.floorDiv(sumZ + 2 * position.x() - sumX, 2);
-            }
-            case 2 -> {
-                x = sumX - position.x();
-                z = sumZ - position.z();
-            }
-            case 3 -> {
-                x = Math.floorDiv(sumX + 2 * position.z() - sumZ, 2);
-                z = Math.floorDiv(sumZ - 2 * position.x() + sumX, 2);
-            }
-            default -> {
-                return position;
+        for (TransformOp operation : state.transforms) {
+            if (!operation.rotation) {
+                switch (operation.axis) {
+                    case 0 -> x = sumX - x;
+                    case 1 -> y = region.getMinimumPoint().y() + region.getMaximumPoint().y() - y;
+                    case 2 -> z = sumZ - z;
+                    default -> throw new IllegalStateException("Unknown flip axis");
+                }
+            } else {
+                int rotatedX = Math.floorDiv(sumX + sumZ - 2 * z, 2);
+                z = Math.floorDiv(sumZ + 2 * x - sumX, 2);
+                x = rotatedX;
             }
         }
-        return BlockVector3.at(x, position.y(), z);
+        return BlockVector3.at(x, y, z);
     }
 
-    private BlockData rotateBlockData(BlockData blockData, int quarterTurns) {
-        BlockData rotated = blockData.clone();
-        for (int i = 0; i < Math.floorMod(quarterTurns, 4); i++) rotated.rotate(StructureRotation.CLOCKWISE_90);
-        return rotated;
+    private BlockData transformBlockData(BlockData blockData, EditState state) {
+        BlockData transformed = blockData.clone();
+        for (TransformOp operation : state.transforms) {
+            if (operation.rotation) {
+                transformed.rotate(StructureRotation.CLOCKWISE_90);
+            } else if (operation.axis == 0) {
+                transformed.mirror(Mirror.FRONT_BACK);
+            } else if (operation.axis == 2) {
+                transformed.mirror(Mirror.LEFT_RIGHT);
+            } else if (operation.axis == 1) {
+                if (transformed instanceof Bisected bisected) {
+                    bisected.setHalf(bisected.getHalf() == Bisected.Half.TOP ? Bisected.Half.BOTTOM : Bisected.Half.TOP);
+                }
+                if (transformed instanceof Directional directional) {
+                    if (directional.getFacing() == BlockFace.UP) directional.setFacing(BlockFace.DOWN);
+                    else if (directional.getFacing() == BlockFace.DOWN) directional.setFacing(BlockFace.UP);
+                }
+            }
+        }
+        return transformed;
+    }
+
+    private boolean hasBlockTransform(EditState state) {
+        return !state.transforms.isEmpty();
     }
 
     private void commitCopy(Player player, EditState state) {
@@ -558,14 +586,14 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         try {
             var editSession = state.session.createEditSession(BukkitAdapter.adapt(player));
             try (editSession) {
-                if (state.rotationSteps == 0) {
+                if (!hasBlockTransform(state)) {
                     BlockArrayClipboard clipboard = createClipboard(sourceRegion, state.mask);
                     pasteAt(editSession, clipboard, sourceRegion.getMinimumPoint().add(offset), state.mask != null);
                 } else {
                     Map<BlockVector3, BlockData> blocks = captureBlocks(sourceRegion, state.mask);
                     for (Map.Entry<BlockVector3, BlockData> block : blocks.entrySet()) {
-                        BlockVector3 destination = rotatePosition(block.getKey(), sourceRegion, state.rotationSteps).add(offset);
-                        editSession.setBlock(destination, BukkitAdapter.adapt(rotateBlockData(block.getValue(), state.rotationSteps)));
+                        BlockVector3 destination = transformPosition(block.getKey(), sourceRegion, state).add(offset);
+                        editSession.setBlock(destination, BukkitAdapter.adapt(transformBlockData(block.getValue(), state)));
                     }
                 }
             }
@@ -767,14 +795,26 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         }
         if (state.mode == Mode.MOVE) {
             state.modeBar.setTitle("§eMOVE §f[" + state.move[0] + ", " + state.move[1] + ", " + state.move[2]
-                    + "] §7Q: rotate " + (state.rotationSteps * 90) + "° · Scroll to move · Right click: apply · Left click: exit");
+                    + "] §7Q: rotate · Shift+Q: flip look axis · " + transformLabel(state)
+                    + " · Scroll to move · Right click: apply · Left click: exit");
         } else if (state.mode == Mode.COPY) {
             state.modeBar.setTitle("§eCOPY §f[" + state.copy[0] + ", " + state.copy[1] + ", " + state.copy[2]
-                    + "] §7Q: rotate " + (state.rotationSteps * 90) + "° · Scroll to move copy · Right click: place · Left click: exit");
+                    + "] §7Q: rotate · Shift+Q: flip look axis · " + transformLabel(state)
+                    + " · Scroll to move copy · Right click: place · Left click: exit");
         } else {
             state.modeBar.setTitle("§eSTACK §f[X:" + state.stack[0] + " Y:" + state.stack[1] + " Z:" + state.stack[2]
                     + "] §7Scroll to stack · Right click: apply · Left click: exit");
         }
+    }
+
+    private String transformLabel(EditState state) {
+        if (state.transforms.isEmpty()) return "Original";
+        TransformOp last = state.transforms.get(state.transforms.size() - 1);
+        return last.rotation ? "Last: rotate 90°" : "Last: flip " + switch (last.axis) {
+            case 0 -> "X";
+            case 1 -> "Y";
+            default -> "Z";
+        };
     }
 
     private enum Mode { NORMAL, MOVE, COPY, STACK }
@@ -793,7 +833,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
         private BukkitTask selectionRestoreTask;
         private boolean suppressSelectionRefresh;
         private int lastVirtualSlot;
-        private int rotationSteps;
+        private final List<TransformOp> transforms = new ArrayList<>();
         private final List<ScrollInput> pendingScrollInputs = new ArrayList<>();
         private BukkitTask pendingScrollTask;
         private final int lockedSlot;
@@ -811,5 +851,7 @@ public class SelectionEditorListener implements Listener, CommandExecutor, TabCo
     }
 
     private record ScrollInput(int axis, int direction, int amount) { }
+
+    private record TransformOp(boolean rotation, int axis) { }
 
 }
