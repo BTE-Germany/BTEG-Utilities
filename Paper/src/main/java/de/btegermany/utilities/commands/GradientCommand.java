@@ -151,7 +151,6 @@ public class GradientCommand implements TabExecutor {
         boolean radial = direction.equals("inwards") || direction.equals("outwards");
         List<BlockVector3> positions = new ArrayList<>();
         Map<BlockVector3, Integer> radialDistances = new HashMap<>();
-        Map<BlockVector3, Integer> localMaxima = new HashMap<>();
         collectPositions(region, min, max, positions);
         if (radial) {
             if (region instanceof Polygonal2DRegion polygon) {
@@ -163,7 +162,13 @@ public class GradientCommand implements TabExecutor {
                     radialDistances.put(position, distance);
                 }
             }
-            localMaxima.putAll(findReachableLocalMaxima(positions, radialDistances));
+        }
+        int maximumRadialDistance = 0;
+        if (radial) {
+            for (int distance : radialDistances.values()) {
+                ExecutionGuard.check();
+                maximumRadialDistance = Math.max(maximumRadialDistance, distance);
+            }
         }
         int totalLayers = Math.abs(vector[0]) * (max.x() - min.x()) + Math.abs(vector[1]) * (max.y() - min.y()) + Math.abs(vector[2]) * (max.z() - min.z()) + 1;
         int changed = 0;
@@ -176,9 +181,8 @@ public class GradientCommand implements TabExecutor {
             int layers = totalLayers;
             if (radial) {
                 int distance = radialDistances.get(position);
-                int localMaximum = localMaxima.get(position);
-                layer = direction.equals("inwards") ? distance : localMaximum - distance;
-                layers = localMaximum + 1;
+                layer = direction.equals("inwards") ? distance : maximumRadialDistance - distance;
+                layers = maximumRadialDistance + 1;
             } else {
                 int projection = vector[0] * position.x() + vector[1] * position.y() + vector[2] * position.z();
                 layer = projection - minProjection;
@@ -191,35 +195,6 @@ public class GradientCommand implements TabExecutor {
             }
         }
         player.sendMessage(BTEGUtilities.PREFIX + "Applied gradient to §6§l" + changed + " §r§7block(s).");
-    }
-
-    /**
-     * Propagates each position's highest reachable distance through strictly increasing neighbors.
-     */
-    private Map<BlockVector3, Integer> findReachableLocalMaxima(List<BlockVector3> positions,
-                                                                Map<BlockVector3, Integer> distances) {
-        List<BlockVector3> descending = new ArrayList<>(positions);
-        descending.sort(Comparator.comparingInt((BlockVector3 p) -> distances.get(p)).reversed());
-        Map<BlockVector3, Integer> maxima = new HashMap<>(positions.size());
-        for (BlockVector3 position : descending) {
-            ExecutionGuard.check();
-            int distance = distances.get(position);
-            int maximum = distance;
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) continue;
-                        BlockVector3 neighbor = position.add(dx, dy, dz);
-                        Integer neighborDistance = distances.get(neighbor);
-                        if (neighborDistance != null && neighborDistance > distance) {
-                            maximum = Math.max(maximum, maxima.get(neighbor));
-                        }
-                    }
-                }
-            }
-            maxima.put(position, maximum);
-        }
-        return maxima;
     }
 
     private int selectBlock(int layer, int totalLayers, int blockCount, String transition) {
